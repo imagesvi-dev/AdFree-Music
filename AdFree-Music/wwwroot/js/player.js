@@ -1,6 +1,7 @@
 /**
- * U-Music — Audio Player Engine
+ * AdFree Music — Audio Player Engine
  * Manages HTML5 audio, queue, controls, player bar, playlists, downloads, and option menus.
+ * Includes Media Session API for lock-screen playback controls on Android and iOS.
  */
 
 'use strict';
@@ -112,10 +113,11 @@
         const quality = localStorage.getItem('umusic_audio_quality') || 'auto';
         audio.src = `${song.streamUrl}?quality=${quality}`;
         audio.load();
-        audio.play().catch(err => console.error('[UMusic] Playback error:', err));
+        audio.play().catch(err => console.error('[AdFreeMusic] Playback error:', err));
 
         state.isPlaying = true;
         updatePlayerBarUI(song);
+        updateMediaSession(song);
         highlightActiveSong(song.id);
         renderQueueDrawer();
     };
@@ -131,7 +133,7 @@
     function togglePlay() {
         if (!audio.src) return;
         if (audio.paused) {
-            audio.play().catch(err => console.error('[UMusic] Resume error:', err));
+            audio.play().catch(err => console.error('[AdFreeMusic] Resume error:', err));
         } else {
             audio.pause();
         }
@@ -268,15 +270,24 @@
     audio.addEventListener('play', () => {
         state.isPlaying = true;
         updatePlayButton(true);
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'playing';
+        }
     });
 
     audio.addEventListener('pause', () => {
         state.isPlaying = false;
         updatePlayButton(false);
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'paused';
+        }
     });
 
     audio.addEventListener('ended', () => {
-        audio.volume = savedVolume; // Reset volume for next song
+        audio.volume = savedVolume;
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'none';
+        }
         if (repeatMode === 2) {
             audio.currentTime = 0;
             audio.play();
@@ -308,7 +319,7 @@
         if (els.progressFill) els.progressFill.style.width = '0%';
         if (els.timeElapsed) els.timeElapsed.textContent = '0:00';
 
-        document.title = `${song.name} — U-Music`;
+        document.title = `${song.name} — AdFree Music`;
     }
 
     function updatePlayButton(playing) {
@@ -322,6 +333,70 @@
         document.querySelectorAll('[data-song-id]').forEach(el => {
             el.classList.toggle('is-active', el.dataset.songId === songId);
         });
+    }
+
+    // ─────────────────────────────────────────
+    // Media Session API (Lock-Screen Controls)
+    // ─────────────────────────────────────────
+    function updateMediaSession(song) {
+        if (!('mediaSession' in navigator)) return;
+
+        // Build artwork array — provide multiple sizes for OS to pick
+        const artSrc = song.image || '';
+        const artwork = artSrc
+            ? [
+                { src: artSrc, sizes: '96x96',   type: 'image/jpeg' },
+                { src: artSrc, sizes: '128x128',  type: 'image/jpeg' },
+                { src: artSrc, sizes: '192x192',  type: 'image/jpeg' },
+                { src: artSrc, sizes: '256x256',  type: 'image/jpeg' },
+                { src: artSrc, sizes: '512x512',  type: 'image/jpeg' }
+              ]
+            : [{ src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' }];
+
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title:  song.name   || 'Unknown Track',
+            artist: song.artist || 'Unknown Artist',
+            album:  song.album  || 'AdFree Music',
+            artwork
+        });
+
+        navigator.mediaSession.playbackState = 'playing';
+
+        // Action handlers — guard each with try/catch for Safari partial support
+        const safeHandler = (action, handler) => {
+            try { navigator.mediaSession.setActionHandler(action, handler); }
+            catch { /* browser doesn't support this action */ }
+        };
+
+        safeHandler('play',  () => { audio.play(); });
+        safeHandler('pause', () => { audio.pause(); });
+
+        safeHandler('previoustrack', () => { playPrev(); });
+        safeHandler('nexttrack',     () => { playNext(); });
+
+        // Seek support (Chrome Android, desktop Chrome)
+        safeHandler('seekto', details => {
+            if (details.seekTime !== undefined && audio.duration) {
+                audio.currentTime = details.seekTime;
+                navigator.mediaSession.setPositionState({
+                    duration:     audio.duration,
+                    playbackRate: audio.playbackRate,
+                    position:     audio.currentTime
+                });
+            }
+        });
+
+        // Expose position state when duration is known
+        audio.addEventListener('durationchange', () => {
+            if (!('mediaSession' in navigator) || !audio.duration) return;
+            try {
+                navigator.mediaSession.setPositionState({
+                    duration:     audio.duration,
+                    playbackRate: audio.playbackRate,
+                    position:     Math.min(audio.currentTime, audio.duration)
+                });
+            } catch { /* not supported */ }
+        }, { once: true });
     }
 
     // ─────────────────────────────────────────

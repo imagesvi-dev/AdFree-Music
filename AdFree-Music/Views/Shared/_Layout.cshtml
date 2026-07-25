@@ -2,12 +2,29 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="U-Music — Stream millions of songs in high quality. No ads, no login required. Discover trending music instantly." />
-    <meta name="theme-color" content="#0a0a0a" />
-    <meta property="og:title" content="U-Music — Premium Music Streaming" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="AdFree Music — Stream millions of songs in high quality. No ads, no login required. Discover trending music instantly." />
+
+    <!-- PWA / Theme -->
+    <meta name="theme-color" content="#8b5cf6" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="AdFree Music" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="AdFree Music — Premium Music Streaming" />
     <meta property="og:description" content="Stream any song in high quality. No ads. No login." />
-    <title>@ViewData["Title"] — U-Music</title>
+    <meta property="og:image" content="/icons/icon-512.png" />
+    <meta property="og:type" content="website" />
+
+    <title>@ViewData["Title"] — AdFree Music</title>
+
+    <!-- PWA Manifest & Icons -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -406,5 +423,65 @@
         </div>
         <div id="playlist-select-list" style="max-height:200px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
     </div>
+    <!-- ─── PWA Install Prompt Banner ─── -->
+    <div id="pwa-install-banner" style="display:none; position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:rgba(20,10,40,0.96); backdrop-filter:blur(16px); border:1px solid var(--accent); border-radius:var(--radius-lg); padding:14px 20px; z-index:99998; width:min(360px,90vw); box-shadow:0 16px 48px rgba(0,0,0,0.7); display:flex; align-items:center; gap:14px;" aria-live="polite">
+        <img src="/icons/icon-192.png" alt="AdFree Music" style="width:48px;height:48px;border-radius:12px;flex-shrink:0;" />
+        <div style="flex:1; min-width:0;">
+            <div style="font-weight:700; font-size:0.9rem; color:#fff;">Install AdFree Music</div>
+            <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:2px;">Add to Home Screen for the best experience</div>
+        </div>
+        <div style="display:flex; gap:8px; flex-shrink:0;">
+            <button id="pwa-install-btn" style="background:var(--accent); color:#fff; border:none; padding:8px 14px; border-radius:var(--radius-md); font-size:0.8rem; font-weight:600; cursor:pointer;">Install</button>
+            <button id="pwa-install-dismiss" style="background:rgba(255,255,255,0.08); color:var(--text-secondary); border:none; padding:8px 10px; border-radius:var(--radius-md); font-size:0.8rem; cursor:pointer;">✕</button>
+        </div>
+    </div>
+
+    <!-- ─── Service Worker + PWA Logic ─── -->
+    <script>
+        (function () {
+            'use strict';
+
+            // ── Service Worker registration ──────────────────────────────
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                        .catch(err => console.warn('[SW] Registration failed:', err));
+                });
+            }
+
+            // ── PWA Install prompt ──────────────────────────────────────
+            let deferredInstallPrompt = null;
+            const banner = document.getElementById('pwa-install-banner');
+
+            window.addEventListener('beforeinstallprompt', e => {
+                e.preventDefault();
+                deferredInstallPrompt = e;
+                // Show banner after 3 seconds if user hasn't dismissed
+                const dismissed = sessionStorage.getItem('pwa-install-dismissed');
+                if (!dismissed && banner) {
+                    setTimeout(() => { banner.style.display = 'flex'; }, 3000);
+                }
+            });
+
+            document.getElementById('pwa-install-btn')?.addEventListener('click', async () => {
+                if (!deferredInstallPrompt) return;
+                deferredInstallPrompt.prompt();
+                const { outcome } = await deferredInstallPrompt.userChoice;
+                deferredInstallPrompt = null;
+                if (banner) banner.style.display = 'none';
+            });
+
+            document.getElementById('pwa-install-dismiss')?.addEventListener('click', () => {
+                if (banner) banner.style.display = 'none';
+                sessionStorage.setItem('pwa-install-dismissed', '1');
+            });
+
+            // Hide banner once installed
+            window.addEventListener('appinstalled', () => {
+                if (banner) banner.style.display = 'none';
+                deferredInstallPrompt = null;
+            });
+        })();
+    </script>
 </body>
 </html>
