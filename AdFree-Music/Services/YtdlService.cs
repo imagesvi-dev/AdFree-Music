@@ -18,8 +18,11 @@ public sealed class YtdlService
         _logger = logger;
         // Place yt-dlp in a Tools directory inside the project root
         _toolsDir = Path.Combine(Directory.GetCurrentDirectory(), "Tools");
-        _exePath = Path.Combine(_toolsDir, "yt-dlp.exe");
+        
+        bool isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+        _exePath = Path.Combine(_toolsDir, isWindows ? "yt-dlp.exe" : "yt-dlp");
     }
+
 
     /// <summary>
     /// Ensures that yt-dlp.exe exists, downloading it from GitHub if necessary.
@@ -38,18 +41,41 @@ public sealed class YtdlService
             Directory.CreateDirectory(_toolsDir);
         }
 
-        const string downloadUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe";
+        bool isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+        string downloadUrl = isWindows 
+            ? "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" 
+            : "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux";
+
         using var client = new HttpClient();
         
         try
         {
-            _logger.LogInformation("Downloading yt-dlp.exe from {Url}", downloadUrl);
+            _logger.LogInformation("Downloading yt-dlp from {Url}", downloadUrl);
             var response = await client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead, ct);
             response.EnsureSuccessStatusCode();
 
             using var fileStream = new FileStream(_exePath, FileMode.Create, FileAccess.Write, FileShare.None);
             await response.Content.CopyToAsync(fileStream, ct);
-            _logger.LogInformation("yt-dlp.exe downloaded successfully to {Path}", _exePath);
+            _logger.LogInformation("yt-dlp downloaded successfully to {Path}", _exePath);
+
+            // On Linux/Mac, ensure it is executable
+            if (!isWindows)
+            {
+                try
+                {
+                    File.SetUnixFileMode(_exePath, 
+                        UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute | 
+                        UnixFileMode.GroupRead | UnixFileMode.GroupExecute | 
+                        UnixFileMode.OtherRead | UnixFileMode.OtherExecute);
+                    _logger.LogInformation("Execution permissions set for yt-dlp");
+                }
+                catch (Exception chmodEx)
+                {
+                    _logger.LogWarning(chmodEx, "Could not set Unix file mode, trying chmod...");
+                    using var chmodProcess = Process.Start("chmod", $"+x \"{_exePath}\"");
+                    await chmodProcess.WaitForExitAsync(ct);
+                }
+            }
         }
         catch (Exception ex)
         {
