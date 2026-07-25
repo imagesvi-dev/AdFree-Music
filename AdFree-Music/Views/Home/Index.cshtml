@@ -1,8 +1,452 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@using UMusic.Models
+@model HomeViewModel
+
+@{
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+@section Styles {
+    <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" />
+}
+
+<!-- ─── Carousel Banner ─── -->
+@if (Model.TrendingSongs.Any())
+{
+    var carouselItems = new List<(Song Song, string Tag, string Tagline)>();
+    if (Model.TrendingSongs.Count > 0)
+        carouselItems.Add((Model.TrendingSongs[0], "Trending Hits", "The hottest song streaming right now."));
+    if (Model.LatestSongs.Count > 0)
+        carouselItems.Add((Model.LatestSongs[0], "New Release", "Fresh out of the studio. Stream the newest hit."));
+    if (Model.BollywoodSongs.Count > 0)
+        carouselItems.Add((Model.BollywoodSongs[0], "Featured Artist", "A spotlight on the week's most-played artist."));
+    if (Model.GlobalSongs.Count > 0)
+        carouselItems.Add((Model.GlobalSongs[0], "Global Choice", "Loved by listeners worldwide."));
+    if (Model.TrendingSongs.Count > 1)
+        carouselItems.Add((Model.TrendingSongs[1], "Editor's Pick", "Our music editors' handpicked favorite track."));
+
+    <div class="carousel" id="home-carousel" aria-label="Featured Music Slider">
+        <div class="carousel__track-container">
+            <div class="carousel__track" id="carousel-track">
+                @for (int i = 0; i < carouselItems.Count; i++)
+                {
+                    var item = carouselItems[i];
+                    var song = item.Song;
+                    <div class="carousel__slide @(i == 0 ? "is-active-slide" : "")" data-index="@i">
+                        <div class="carousel__bg">
+                            <img class="carousel__bg-img" src="@song.ImageUrl" alt="" loading="lazy" />
+                            <div class="carousel__bg-gradient"></div>
+                        </div>
+                        <div class="carousel__content-wrapper">
+                            <div class="carousel__info-glass">
+                                <span class="carousel__tag">@item.Tag</span>
+                                <h2 class="carousel__title">@song.Name</h2>
+                                <p class="carousel__artist-album">
+                                    @song.ArtistName
+                                    @if (!string.IsNullOrEmpty(song.AlbumName))
+                                    {
+                                        <span>•</span> @song.AlbumName
+                                    }
+                                </p>
+                                <div class="carousel__meta-pills">
+                                    <span class="meta-pill">@song.Language</span>
+                                    <span class="meta-pill">@song.DurationFormatted</span>
+                                    @if (!string.IsNullOrEmpty(song.Year))
+                                    {
+                                        <span class="meta-pill">@song.Year</span>
+                                    }
+                                </div>
+                                <p class="carousel__tagline">@item.Tagline</p>
+                                <div class="carousel__actions">
+                                    <button class="btn-3d" onclick="playSong('@song.Id')" aria-label="Play @song.Name now">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                            <polygon points="5,3 19,12 5,21" />
+                                        </svg>
+                                        Play Now
+                                    </button>
+                                    <button class="btn-3d-secondary" onclick="playSong('@song.Id')" aria-label="Queue song">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                                        </svg>
+                                        Queue Track
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="carousel__poster-art">
+                                <img src="@song.ImageUrl" alt="@song.Name album art" loading="lazy" />
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+        
+        <!-- Navigation Buttons -->
+        <button class="carousel__btn carousel__btn--prev" id="carousel-prev" aria-label="Previous Slide">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="15 18 9 12 15 6" />
+            </svg>
+        </button>
+        <button class="carousel__btn carousel__btn--next" id="carousel-next" aria-label="Next Slide">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="9 18 15 12 9 6" />
+            </svg>
+        </button>
+        
+        <!-- Indicators -->
+        <div class="carousel__indicators" id="carousel-indicators">
+            @for (int i = 0; i < carouselItems.Count; i++)
+            {
+                <button class="carousel__indicator @(i == 0 ? "is-active" : "")" data-slide-to="@i" aria-label="Go to slide @(i + 1)"></button>
+            }
+        </div>
+    </div>
+}
+
+<!-- ─── Genre Chips ─── -->
+<div class="genre-chips" role="list" aria-label="Browse by genre">
+    @{
+        var genres = new[] {
+            ("All",        ""),
+            ("Bollywood",  "bollywood hits"),
+            ("Pop",        "pop hits"),
+            ("Hip Hop",    "hip hop"),
+            ("Romantic",   "romantic songs"),
+            ("Punjabi",    "punjabi hits"),
+            ("EDM",        "edm dance"),
+            ("Classical",  "classical music"),
+        };
+    }
+    @foreach (var (label, term) in genres)
+    {
+        <button class="genre-chip @(label == "All" ? "is-active" : "")" type="button"
+                data-genre="@term" role="listitem" aria-label="Browse @label music">@label</button>
+    }
 </div>
+
+<!-- ─── Trending Now ─── -->
+@if (Model.TrendingSongs.Any())
+{
+    <section class="section" aria-labelledby="trending-title">
+        <div class="section-header">
+            <h2 class="section-title" id="trending-title">🔥 Trending Now</h2>
+            <a class="section-link" href="/SeeAll?type=trending">See All →</a>
+        </div>
+        <div class="scroll-row">
+            @foreach (var song in Model.TrendingSongs.Take(12))
+            {
+                <article class="album-card" data-song-id="@song.Id" tabindex="0" role="button"
+                         aria-label="Play @song.Name by @song.ArtistName"
+                         onclick="playSong('@song.Id')" onkeydown="if(event.key==='Enter') playSong('@song.Id')">
+                    <div class="album-card__art">
+                        <img src="@song.ImageUrl" alt="@song.Name" loading="lazy" onerror="this.src=artFallback()"/>
+                        <div class="album-card__overlay">
+                            <div class="album-card__play-btn" aria-hidden="true">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="album-card__meta">
+                        <div class="album-card__title">@song.Name</div>
+                        <div class="album-card__artist">@song.ArtistName</div>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+}
+
+<!-- ─── Latest Releases ─── -->
+@if (Model.LatestSongs.Any())
+{
+    <section class="section" aria-labelledby="latest-title">
+        <div class="section-header">
+            <h2 class="section-title" id="latest-title">✨ Latest Releases</h2>
+            <a class="section-link" href="/SeeAll?type=new-releases">See All →</a>
+        </div>
+        <div class="trending-grid" id="latest-grid">
+            @for (int i = 0; i < Math.Min(Model.LatestSongs.Count, 12); i++)
+            {
+                var song = Model.LatestSongs[i];
+                <article class="trending-item" data-song-id="@song.Id" tabindex="0" role="button"
+                         aria-label="Play @song.Name by @song.ArtistName"
+                         onclick="playSong('@song.Id')" onkeydown="if(event.key==='Enter') playSong('@song.Id')">
+                    <span class="trending-item__num" aria-hidden="true">@(i + 1)</span>
+                    <div class="trending-item__art">
+                        <img src="@song.ImageUrl" alt="@song.Name" loading="lazy" onerror="this.src=artFallback()"/>
+                    </div>
+                    <div class="trending-item__info">
+                        <div class="trending-item__name">@song.Name</div>
+                        <div class="trending-item__artist">@song.ArtistName</div>
+                    </div>
+                    <span class="trending-item__dur">@song.DurationFormatted</span>
+                </article>
+            }
+        </div>
+    </section>
+}
+
+<!-- ─── Bollywood Hits ─── -->
+@if (Model.BollywoodSongs.Any())
+{
+    <section class="section" aria-labelledby="bollywood-title">
+        <div class="section-header">
+            <h2 class="section-title" id="bollywood-title">🎬 Bollywood Hits</h2>
+            <a class="section-link" href="/Search?q=bollywood+hits">See All →</a>
+        </div>
+        <div class="scroll-row">
+            @foreach (var song in Model.BollywoodSongs.Take(12))
+            {
+                <article class="album-card" data-song-id="@song.Id" tabindex="0" role="button"
+                         aria-label="Play @song.Name by @song.ArtistName"
+                         onclick="playSong('@song.Id')" onkeydown="if(event.key==='Enter') playSong('@song.Id')">
+                    <div class="album-card__art">
+                        <img src="@song.ImageUrl" alt="@song.Name" loading="lazy" onerror="this.src=artFallback()"/>
+                        <div class="album-card__overlay">
+                            <div class="album-card__play-btn" aria-hidden="true">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="album-card__meta">
+                        <div class="album-card__title">@song.Name</div>
+                        <div class="album-card__artist">@song.ArtistName</div>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+}
+
+<!-- ─── Global Hits ─── -->
+@if (Model.GlobalSongs.Any())
+{
+    <section class="section" aria-labelledby="global-title">
+        <div class="section-header">
+            <h2 class="section-title" id="global-title">🌍 Global Hits</h2>
+            <a class="section-link" href="/SeeAll?type=trending">See All →</a>
+        </div>
+        <div class="trending-grid">
+            @for (int i = 0; i < Math.Min(Model.GlobalSongs.Count, 10); i++)
+            {
+                var song = Model.GlobalSongs[i];
+                <article class="trending-item" data-song-id="@song.Id" tabindex="0" role="button"
+                         aria-label="Play @song.Name by @song.ArtistName"
+                         onclick="playSong('@song.Id')" onkeydown="if(event.key==='Enter') playSong('@song.Id')">
+                    <span class="trending-item__num" aria-hidden="true">@(i + 1)</span>
+                    <div class="trending-item__art">
+                        <img src="@song.ImageUrl" alt="@song.Name" loading="lazy" onerror="this.src=artFallback()"/>
+                    </div>
+                    <div class="trending-item__info">
+                        <div class="trending-item__name">@song.Name</div>
+                        <div class="trending-item__artist">@song.ArtistName</div>
+                    </div>
+                    <span class="trending-item__dur">@song.DurationFormatted</span>
+                </article>
+            }
+        </div>
+    </section>
+}
+
+<!-- ─── Featured Albums ─── -->
+@if (Model.FeaturedAlbums.Any())
+{
+    <section class="section" aria-labelledby="albums-title">
+        <div class="section-header">
+            <h2 class="section-title" id="albums-title">💿 Popular Albums</h2>
+            <a class="section-link" href="/SeeAll?type=albums">See All →</a>
+        </div>
+        <div class="scroll-row">
+            @foreach (var album in Model.FeaturedAlbums.Take(12))
+            {
+                <article class="album-card" tabindex="0" role="button"
+                         aria-label="Browse @album.Name by @album.ArtistName"
+                         onclick="window.location.href='/Album/@album.Id'"
+                         onkeydown="if(event.key==='Enter') window.location.href='/Album/@album.Id'">
+                    <div class="album-card__art">
+                        <img src="@album.ImageUrl" alt="@album.Name" loading="lazy" onerror="this.src=artFallback()"/>
+                        <div class="album-card__overlay">
+                            <div class="album-card__play-btn" aria-hidden="true">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="album-card__meta">
+                        <div class="album-card__title">@album.Name</div>
+                        <div class="album-card__artist">@album.ArtistName</div>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+}
+
+@if (!Model.AllSongs.Any())
+{
+    <div class="empty-state" aria-live="polite">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+        </svg>
+        <p class="empty-state__title">Loading music…</p>
+        <p class="empty-state__sub">Use the search bar above to find your favourite songs and artists.</p>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        // Build the full queue from all songs for playback
+        const allSongs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.AllSongs.Select(s => new {
+                id               = s.Id,
+                name             = s.Name,
+                artist           = s.ArtistName,
+                album            = s.AlbumName,
+                image            = s.ImageUrl,
+                streamUrl        = $"/api/stream/{s.Id}",
+                duration         = s.DurationSeconds,
+                durationFormatted= s.DurationFormatted
+            })
+        ));
+
+        window.setQueue?.(allSongs);
+
+        function playSong(songId) {
+            const idx = allSongs.findIndex(s => s.id === songId);
+            if (idx >= 0) {
+                window.playTrack?.(allSongs[idx], allSongs, idx);
+                // Highlight all cards with this id
+                document.querySelectorAll('[data-song-id]').forEach(el =>
+                    el.classList.toggle('is-active', el.dataset.songId === songId));
+            }
+        }
+
+        // Carousel Controller Logic
+        (function () {
+            const track = document.getElementById('carousel-track');
+            const prevBtn = document.getElementById('carousel-prev');
+            const nextBtn = document.getElementById('carousel-next');
+            const indicators = document.getElementById('carousel-indicators');
+            const slides = track ? Array.from(track.children) : [];
+
+            if (!track || slides.length === 0) return;
+
+            let currentIndex = 0;
+            let slideInterval;
+            const intervalTime = 6000; // 6s per slide
+
+            function updateCarousel(index) {
+                // Infinite Looping bounds check
+                if (index < 0) index = slides.length - 1;
+                if (index >= slides.length) index = 0;
+                
+                currentIndex = index;
+                track.style.transform = `translateX(-${currentIndex * 100}%)`;
+                
+                // Toggle active slide class for transition zoom effect
+                slides.forEach((slide, i) => {
+                    slide.classList.toggle('is-active-slide', i === currentIndex);
+                });
+
+                if (indicators) {
+                    Array.from(indicators.children).forEach((indicator, i) => {
+                        indicator.classList.toggle('is-active', i === currentIndex);
+                    });
+                }
+            }
+
+            function nextSlide() {
+                updateCarousel(currentIndex + 1);
+            }
+
+            function prevSlide() {
+                updateCarousel(currentIndex - 1);
+            }
+
+            nextBtn?.addEventListener('click', () => {
+                nextSlide();
+                resetInterval();
+            });
+
+            prevBtn?.addEventListener('click', () => {
+                prevSlide();
+                resetInterval();
+            });
+
+            if (indicators) {
+                Array.from(indicators.children).forEach((indicator, i) => {
+                    indicator.addEventListener('click', () => {
+                        updateCarousel(i);
+                        resetInterval();
+                    });
+                });
+            }
+
+            // Keyboard navigation support
+            document.addEventListener('keydown', (e) => {
+                // Focus bounds check: only trigger if user is not typing in search
+                const active = document.activeElement;
+                if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+                    return;
+                }
+                if (e.key === 'ArrowLeft') {
+                    prevSlide();
+                    resetInterval();
+                } else if (e.key === 'ArrowRight') {
+                    nextSlide();
+                    resetInterval();
+                }
+            });
+
+            // Touch Swipe / drag support for mobile and tablets
+            let touchStartX = 0;
+            let touchEndX = 0;
+
+            const carouselContainer = document.getElementById('home-carousel');
+
+            carouselContainer?.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+            }, { passive: true });
+
+            carouselContainer?.addEventListener('touchend', (e) => {
+                touchEndX = e.changedTouches[0].screenX;
+                handleSwipeGesture();
+            }, { passive: true });
+
+            function handleSwipeGesture() {
+                const swipeThreshold = 50; // pixels
+                const diff = touchEndX - touchStartX;
+                if (Math.abs(diff) > swipeThreshold) {
+                    if (diff > 0) {
+                        prevSlide(); // Swipe Right -> Prev Slide
+                    } else {
+                        nextSlide(); // Swipe Left -> Next Slide
+                    }
+                    resetInterval();
+                }
+            }
+
+            function startInterval() {
+                slideInterval = setInterval(nextSlide, intervalTime);
+            }
+
+            function resetInterval() {
+                clearInterval(slideInterval);
+                startInterval();
+            }
+
+            carouselContainer?.addEventListener('mouseenter', () => clearInterval(slideInterval));
+            carouselContainer?.addEventListener('mouseleave', startInterval);
+
+            startInterval();
+        })();
+
+        // Genre chips
+        document.querySelectorAll('.genre-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const genre = chip.dataset.genre;
+                document.querySelectorAll('.genre-chip').forEach(c => c.classList.remove('is-active'));
+                chip.classList.add('is-active');
+                if (genre) window.location.href = '/Search?q=' + encodeURIComponent(genre);
+            });
+        });
+    </script>
+}

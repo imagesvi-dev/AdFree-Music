@@ -1,0 +1,73 @@
+@using UMusic.Models
+@model SearchResult
+
+@{
+    ViewData["Title"] = string.IsNullOrWhiteSpace(Model?.Query) ? "Search" : $"Search: {Model.Query}";
+    var query = Model?.Query ?? string.Empty;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/search.css" asp-append-version="true" />
+}
+
+<div class="search-header">
+    <h1 class="search-header__title">
+        @if (string.IsNullOrWhiteSpace(query))
+        {
+            @:Search
+        }
+        else
+        {
+            @:Results for <em>"@query"</em>
+        }
+    </h1>
+    <p id="results-count" class="search-header__count" aria-live="polite"></p>
+</div>
+
+<!-- Search Bar (hidden, mirrored by global topbar search) -->
+<div class="search-bar" role="search" style="display:none">
+    <span class="search-bar__icon" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+        </svg>
+    </span>
+    <input
+        id="search-input"
+        type="search"
+        class="search-bar__input"
+        placeholder="Search songs, artists, albums…"
+        value="@query"
+        autocomplete="off"
+        spellcheck="false"
+        aria-label="Search music"
+    />
+    <button id="search-clear" class="search-bar__clear @(string.IsNullOrWhiteSpace(query) ? "hidden" : "")" aria-label="Clear search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+    </button>
+</div>
+
+<!-- Loading indicator -->
+<div id="search-loading" class="search-loading" style="display:none" aria-live="polite" aria-label="Searching">
+    <div class="spinner" role="status"></div>
+    <span>Searching…</span>
+</div>
+
+<!-- Results Container -->
+<div id="search-results" aria-live="polite" aria-label="Search results">
+    @if (string.IsNullOrWhiteSpace(query))
+    {
+        <div class="search-prompt">
+            <svg class="search-prompt__icon" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+            </svg>
+            <p class="search-prompt__title">Find your music</p>
+            <p class="search-prompt__sub">Search for any song, artist, or album to start listening instantly.</p>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/search.js" asp-append-version="true"></script>
+}

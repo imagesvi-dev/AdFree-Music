@@ -1,0 +1,467 @@
+@using UMusic.Models
+@model SeeAllViewModel
+
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+@section Styles {
+    <style>
+        .see-all-container {
+            padding: 24px 0;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .see-all-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .see-all-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+        }
+
+        .see-all-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .see-all-search {
+            position: relative;
+            min-width: 240px;
+        }
+
+        .see-all-search input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border);
+            color: #fff;
+            padding: 10px 16px 10px 40px;
+            border-radius: var(--radius-full);
+            outline: none;
+            font-size: 0.9rem;
+            transition: all var(--transition-fast);
+        }
+
+        .see-all-search input:focus {
+            border-color: var(--accent);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .see-all-search svg {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            pointer-events: none;
+        }
+
+        .see-all-sort select {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border);
+            color: #fff;
+            padding: 9px 16px;
+            border-radius: var(--radius-md);
+            outline: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        /* Responsive Grid layouts */
+        .artists-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 24px;
+        }
+
+        .artist-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition-med);
+        }
+
+        .artist-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-album);
+        }
+
+        .artist-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px auto;
+            box-shadow: var(--shadow-card);
+            color: rgba(255,255,255,0.4);
+        }
+
+        .artist-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        @@media (max-width: 600px) {
+            .see-all-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .see-all-controls {
+                width: 100%;
+            }
+            .see-all-search {
+                width: 100%;
+            }
+        }
+    </style>
+}
+
+<div class="see-all-container">
+    <div class="see-all-header">
+        <h1 class="see-all-title">@Model.Title</h1>
+        
+        <div class="see-all-controls">
+            <!-- Search field -->
+            <div class="see-all-search">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                </svg>
+                <input type="search" id="see-all-search-input" placeholder="Search..." autocomplete="off" />
+            </div>
+
+            <!-- Sorting dropdown -->
+            <div class="see-all-sort">
+                <select id="see-all-sort-select">
+                    <option value="default">Sort: Popularity</option>
+                    <option value="alpha">Sort: Alphabetical</option>
+                    @if (Model.Type == "trending" || Model.Type == "new-releases") {
+                        <option value="duration">Sort: Duration</option>
+                    }
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Specific Containers -->
+    <div id="see-all-content">
+        @if (Model.Type == "trending" || Model.Type == "new-releases")
+        {
+            <!-- Songs List -->
+            <div class="song-list" id="songs-list-root">
+                <div class="song-list-header">
+                    <span class="song-list-header__num"><span class="col-label">#</span></span>
+                    <span class="song-list-header__art"></span>
+                    <span class="song-list-header__info"><span class="col-label">Title</span></span>
+                    <span class="song-list-header__album"><span class="col-label">Album</span></span>
+                    <span class="song-list-header__dur">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.5">
+                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                    </span>
+                </div>
+                <div id="songs-items-container">
+                    @for (int i = 0; i < Model.Songs.Count; i++)
+                    {
+                        var song = Model.Songs[i];
+                        <div class="song-list-item" data-song-id="@song.Id" tabindex="0" role="button">
+                            <span class="song-list-item__num">@(i + 1)</span>
+                            <div class="song-list-item__art">
+                                <img src="@song.ImageUrl" alt="@song.Name" loading="lazy" onerror="this.src=artFallback()">
+                                <div class="song-list-item__art-overlay">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+                                </div>
+                            </div>
+                            <div class="song-list-item__info">
+                                <div class="song-list-item__name">@song.Name</div>
+                                <div class="song-list-item__artist">@song.ArtistName</div>
+                            </div>
+                            <div class="song-list-item__album">@song.AlbumName</div>
+                            <div class="song-list-item__duration">@song.DurationFormatted</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else if (Model.Type == "albums")
+        {
+            <!-- Albums Grid -->
+            <div class="playlist-grid" id="albums-items-container">
+                @foreach (var album in Model.Albums)
+                {
+                    <article class="album-card" tabindex="0" role="button" data-album-id="@album.Id"
+                             onclick="window.location.href='/Album/@album.Id'">
+                        <div class="album-card__art">
+                            <img src="@album.ImageUrl" alt="@album.Name" loading="lazy" onerror="this.src=artFallback()"/>
+                            <div class="album-card__overlay">
+                                <div class="album-card__play-btn">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="album-card__meta">
+                            <div class="album-card__title">@album.Name</div>
+                            <div class="album-card__artist">@album.ArtistName</div>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+        else if (Model.Type == "artists")
+        {
+            <!-- Artists Grid -->
+            <div class="artists-grid" id="artists-items-container">
+                @foreach (var artist in Model.Artists)
+                {
+                    <div class="artist-card" onclick="window.location.href='/Search?q=@Uri.EscapeDataString(artist)'">
+                        <div class="artist-avatar">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                            </svg>
+                        </div>
+                        <div class="artist-name">@artist</div>
+                    </div>
+                }
+            </div>
+        }
+        else if (Model.Type == "playlists")
+        {
+            <!-- Playlists Grid (populated client side via LocalStorage) -->
+            <div class="playlist-grid" id="playlists-items-container">
+                <!-- JS populated -->
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const type = "@Model.Type";
+            
+            // Collect server-rendered structures for client filtering
+            let songs = [];
+            let albums = [];
+            let artists = [];
+
+            if (type === "trending" || type === "new-releases") {
+                songs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                    Model.Songs.Select(s => new {
+                        id               = s.Id,
+                        name             = s.Name,
+                        artist           = s.ArtistName,
+                        album            = s.AlbumName,
+                        image            = s.ImageUrl,
+                        streamUrl        = $"/api/stream/{s.Id}",
+                        duration         = s.DurationSeconds,
+                        durationFormatted= s.DurationFormatted
+                    })
+                ));
+                window.setQueue?.(songs);
+
+                // Bind original row plays
+                bindSongClicks(songs);
+            } 
+            else if (type === "albums") {
+                albums = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                    Model.Albums.Select(a => new {
+                        id       = a.Id,
+                        name     = a.Name,
+                        artist   = a.ArtistName,
+                        image    = a.ImageUrl,
+                        year     = a.Year
+                    })
+                ));
+            }
+            else if (type === "artists") {
+                artists = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Artists));
+            }
+            else if (type === "playlists") {
+                renderPlaylistsList();
+            }
+
+            // Search Filter
+            const searchInput = document.getElementById('see-all-search-input');
+            searchInput.addEventListener('input', () => {
+                filterAndSort();
+            });
+
+            // Sort Filter
+            const sortSelect = document.getElementById('see-all-sort-select');
+            sortSelect.addEventListener('change', () => {
+                filterAndSort();
+            });
+
+            function bindSongClicks(list) {
+                const container = document.getElementById('songs-items-container');
+                if (!container) return;
+                container.querySelectorAll('.song-list-item').forEach(el => {
+                    el.addEventListener('click', () => {
+                        const songId = el.dataset.songId;
+                        const idx = list.findIndex(s => s.id === songId);
+                        if (idx >= 0) {
+                            window.playTrack?.(list[idx], list, idx);
+                        }
+                    });
+                });
+            }
+
+            function filterAndSort() {
+                const query = searchInput.value.toLowerCase().trim();
+                const sortBy = sortSelect.value;
+
+                if (type === "trending" || type === "new-releases") {
+                    let filtered = songs.filter(s => 
+                        s.name.toLowerCase().includes(query) || 
+                        s.artist.toLowerCase().includes(query) || 
+                        s.album.toLowerCase().includes(query)
+                    );
+
+                    if (sortBy === "alpha") {
+                        filtered.sort((a, b) => a.name.localeCompare(b.name));
+                    } else if (sortBy === "duration") {
+                        filtered.sort((a, b) => b.duration - a.duration);
+                    }
+
+                    const itemsContainer = document.getElementById('songs-items-container');
+                    if (itemsContainer) {
+                        itemsContainer.innerHTML = filtered.map((song, i) => `
+                            <div class="song-list-item" data-song-id="${song.id}" tabindex="0" role="button">
+                                <span class="song-list-item__num">${i + 1}</span>
+                                <div class="song-list-item__art">
+                                    <img src="${song.image}" alt="${song.name}" onerror="this.src=artFallback()">
+                                    <div class="song-list-item__art-overlay">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+                                    </div>
+                                </div>
+                                <div class="song-list-item__info">
+                                    <div class="song-list-item__name">${song.name}</div>
+                                    <div class="song-list-item__artist">${song.artist}</div>
+                                </div>
+                                <div class="song-list-item__album">${song.album}</div>
+                                <div class="song-list-item__duration">${song.durationFormatted}</div>
+                            </div>
+                        `).join('');
+                        bindSongClicks(filtered);
+                    }
+                } 
+                else if (type === "albums") {
+                    let filtered = albums.filter(a => 
+                        a.name.toLowerCase().includes(query) || 
+                        a.artist.toLowerCase().includes(query)
+                    );
+
+                    if (sortBy === "alpha") {
+                        filtered.sort((a, b) => a.name.localeCompare(b.name));
+                    }
+
+                    const itemsContainer = document.getElementById('albums-items-container');
+                    if (itemsContainer) {
+                        itemsContainer.innerHTML = filtered.map(album => `
+                            <article class="album-card" tabindex="0" role="button" data-album-id="${album.id}"
+                                     onclick="window.location.href='/Album/${album.id}'">
+                                <div class="album-card__art">
+                                    <img src="${album.image}" alt="${album.name}" onerror="this.src=artFallback()"/>
+                                    <div class="album-card__overlay">
+                                        <div class="album-card__play-btn">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="album-card__meta">
+                                    <div class="album-card__title">${album.name}</div>
+                                    <div class="album-card__artist">${album.artist}</div>
+                                </div>
+                            </article>
+                        `).join('');
+                    }
+                }
+                else if (type === "artists") {
+                    let filtered = artists.filter(name => name.toLowerCase().includes(query));
+                    if (sortBy === "alpha") {
+                        filtered.sort((a, b) => a.localeCompare(b));
+                    }
+
+                    const itemsContainer = document.getElementById('artists-items-container');
+                    if (itemsContainer) {
+                        itemsContainer.innerHTML = filtered.map(artist => `
+                            <div class="artist-card" onclick="window.location.href='/Search?q=${encodeURIComponent(artist)}'">
+                                <div class="artist-avatar">
+                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                                    </svg>
+                                </div>
+                                <div class="artist-name">${artist}</div>
+                            </div>
+                        `).join('');
+                    }
+                }
+                else if (type === "playlists") {
+                    renderPlaylistsList(query, sortBy);
+                }
+            }
+
+            function renderPlaylistsList(query = "", sortBy = "default") {
+                const container = document.getElementById('playlists-items-container');
+                if (!container) return;
+
+                let playlists = [];
+                try {
+                    playlists = JSON.parse(localStorage.getItem('umusic_playlists') || '[]');
+                } catch(e) {
+                    playlists = [];
+                }
+
+                let filtered = playlists.filter(pl => pl.name.toLowerCase().includes(query));
+                if (sortBy === "alpha") {
+                    filtered.sort((a, b) => a.name.localeCompare(b.name));
+                }
+
+                if (filtered.length === 0) {
+                    container.innerHTML = `<p style="grid-column:1/-1; text-align:center; padding:24px; color:var(--text-muted);">No playlists found</p>`;
+                    return;
+                }
+
+                container.innerHTML = filtered.map(pl => {
+                    const songCount = pl.songs.length;
+                    let img = artFallback();
+                    if (songCount > 0) img = pl.songs[0].image || artFallback();
+
+                    return `
+                        <article class="album-card" tabindex="0" role="button" onclick="window.location.href='/Playlists'">
+                            <div class="album-card__art">
+                                <img src="${img}" alt="${pl.name}" onerror="this.src=artFallback()"/>
+                                <div class="album-card__overlay">
+                                    <div class="album-card__play-btn">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="album-card__meta">
+                                <div class="album-card__title">${escapeHtml(pl.name)}</div>
+                                <div class="album-card__artist">${songCount} track${songCount !== 1 ? 's' : ''}</div>
+                            </div>
+                        </article>`;
+                }).join('');
+            }
+        });
+    </script>
+}

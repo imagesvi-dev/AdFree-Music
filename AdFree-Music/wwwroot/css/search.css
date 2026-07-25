@@ -1,0 +1,261 @@
+/* ============================================================
+   U-Music — Search Page Styles
+   ============================================================ */
+
+/* Page Header */
+.search-header {
+  margin-bottom: 28px;
+}
+
+.search-header__title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 8px;
+}
+
+.search-header__title em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+.search-header__count {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Search Bar (full width on search page) */
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-bottom: 28px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.search-bar:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.search-bar__icon {
+  padding: 0 16px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.search-bar__input {
+  flex: 1;
+  padding: 14px 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.search-bar__input::placeholder { color: var(--text-muted); }
+
+.search-bar__clear {
+  padding: 0 16px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.search-bar__clear:hover { color: var(--text-primary); }
+.search-bar__clear.hidden { visibility: hidden; }
+
+/* ============================================================
+   Results Loading State
+   ============================================================ */
+.search-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* ============================================================
+   Song List (results)
+   ============================================================ */
+.song-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.song-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  position: relative;
+}
+
+.song-list-item:hover {
+  background: var(--bg-hover);
+}
+
+.song-list-item.is-active {
+  background: var(--accent-subtle);
+}
+
+.song-list-item__num {
+  width: 24px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: center;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.song-list-item.is-active .song-list-item__num { color: var(--accent); }
+
+.song-list-item__art {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.song-list-item__art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.song-list-item__art-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.song-list-item:hover .song-list-item__art-overlay { opacity: 1; }
+
+.song-list-item__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.song-list-item__name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.song-list-item.is-active .song-list-item__name { color: var(--accent); }
+
+.song-list-item__artist {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.song-list-item__album {
+  flex: 1;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.song-list-item__duration {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  width: 40px;
+  text-align: right;
+}
+
+/* Column headers */
+.song-list-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+.song-list-header__num  { width: 24px; flex-shrink: 0; }
+.song-list-header__art  { width: 44px; height: 1px; flex-shrink: 0; }
+.song-list-header__info { flex: 1; }
+.song-list-header__album{ flex: 1; }
+.song-list-header__dur  { width: 40px; }
+
+.col-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   No results / initial state
+   ============================================================ */
+.search-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100px 20px;
+  text-align: center;
+  gap: 14px;
+}
+
+.search-prompt__icon { opacity: 0.15; }
+.search-prompt__title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+.search-prompt__sub {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  max-width: 320px;
+  line-height: 1.6;
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 768px) {
+  .song-list-item__album { display: none; }
+  .song-list-header__album { display: none; }
+}
+
+@media (max-width: 480px) {
+  .song-list-item__num { display: none; }
+  .song-list-header__num { display: none; }
+}

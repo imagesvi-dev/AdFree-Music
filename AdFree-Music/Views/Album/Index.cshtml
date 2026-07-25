@@ -1,0 +1,318 @@
+@using UMusic.Models
+@model AlbumDetails
+
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+@section Styles {
+    <style>
+        .album-container {
+            padding: 24px 0;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .album-header {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 48px;
+            align-items: flex-end;
+        }
+
+        .album-header__art {
+            width: 250px;
+            height: 250px;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-album);
+            background: var(--bg-tertiary);
+            flex-shrink: 0;
+        }
+
+        .album-header__art img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .album-header__info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .album-header__tag {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--accent);
+            letter-spacing: 0.08em;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .album-header__title {
+            font-size: clamp(2rem, 4.5vw, 3rem);
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            margin-bottom: 8px;
+            line-height: 1.1;
+        }
+
+        .album-header__artist {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        .album-header__meta {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .album-header__meta span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .album-header__meta span:not(:last-child)::after {
+            content: "•";
+            color: var(--text-muted);
+            margin-left: 16px;
+        }
+
+        .album-header__actions {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        /* Detail List layout styling */
+        .song-list-container {
+            margin-top: 32px;
+        }
+
+        @@media (max-width: 768px) {
+            .album-header {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                gap: 24px;
+            }
+            .album-header__art {
+                width: 200px;
+                height: 200px;
+            }
+            .album-header__actions {
+                justify-content: center;
+            }
+            .album-header__meta {
+                justify-content: center;
+            }
+            .album-header__meta span:not(:last-child)::after {
+                display: none;
+            }
+            .album-header__meta {
+                gap: 8px 16px;
+            }
+        }
+    </style>
+}
+
+<div class="album-container">
+    <button class="btn-3d-secondary" onclick="window.history.back()" style="margin-bottom: 32px;">
+        ← Back
+    </button>
+
+    <div class="album-header">
+        <div class="album-header__art">
+            <img src="@Model.ImageUrl" alt="@Model.Name" onerror="this.src=artFallback()" />
+        </div>
+        <div class="album-header__info">
+            <span class="album-header__tag">ALBUM</span>
+            <h1 class="album-header__title">@Model.Name</h1>
+            <div class="album-header__artist">@Model.ArtistName</div>
+            
+            <div class="album-header__meta">
+                <span>@Model.Genre</span>
+                @if (!string.IsNullOrEmpty(Model.Year)) {
+                    <span>@Model.Year</span>
+                }
+                <span>@Model.SongCount track@(Model.SongCount != 1 ? "s" : "")</span>
+                <span>@Model.TotalDurationFormatted</span>
+            </div>
+
+            <div class="album-header__actions">
+                <button class="btn-3d" id="btn-album-play">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <polygon points="5,3 19,12 5,21" />
+                    </svg>
+                    Play
+                </button>
+                <button class="btn-3d-secondary" id="btn-album-shuffle">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
+                        <polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+                    </svg>
+                    Shuffle
+                </button>
+                <button class="btn-3d-secondary" id="btn-album-queue">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Add Queue
+                </button>
+                <button class="btn-3d-secondary" id="btn-album-playlist">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                    Add Playlist
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Song List Grid -->
+    <div class="song-list-container">
+        <div class="song-list">
+            <div class="song-list-header">
+                <span class="song-list-header__num"><span class="col-label">#</span></span>
+                <span class="song-list-header__art"></span>
+                <span class="song-list-header__info"><span class="col-label">Title</span></span>
+                <span class="song-list-header__album"><span class="col-label">Album</span></span>
+                <span class="song-list-header__dur">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.5">
+                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                </span>
+            </div>
+
+            @for (int i = 0; i < Model.Songs.Count; i++)
+            {
+                var song = Model.Songs[i];
+                <div class="song-list-item" data-song-id="@song.Id" tabindex="0" role="button">
+                    <span class="song-list-item__num">@(i + 1)</span>
+                    <div class="song-list-item__art">
+                        <img src="@song.ImageUrl" alt="@song.Name" loading="lazy" onerror="this.src=artFallback()">
+                        <div class="song-list-item__art-overlay">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+                        </div>
+                    </div>
+                    <div class="song-list-item__info">
+                        <div class="song-list-item__name">@song.Name</div>
+                        <div class="song-list-item__artist">@song.ArtistName</div>
+                    </div>
+                    <div class="song-list-item__album">@song.AlbumName</div>
+                    <div class="song-list-item__duration">@song.DurationFormatted</div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const albumSongs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                Model.Songs.Select(s => new {
+                    id               = s.Id,
+                    name             = s.Name,
+                    artist           = s.ArtistName,
+                    album            = s.AlbumName,
+                    image            = s.ImageUrl,
+                    streamUrl        = $"/api/stream/{s.Id}",
+                    duration         = s.DurationSeconds,
+                    durationFormatted= s.DurationFormatted
+                })
+            ));
+
+            // Bind individual play
+            document.querySelectorAll('.song-list-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    const id = el.dataset.songId;
+                    const idx = albumSongs.findIndex(s => s.id === id);
+                    if (idx >= 0) {
+                        window.playTrack?.(albumSongs[idx], albumSongs, idx);
+                    }
+                });
+            });
+
+            // Play Album
+            document.getElementById('btn-album-play').addEventListener('click', () => {
+                if (albumSongs.length > 0) {
+                    window.playTrack?.(albumSongs[0], albumSongs, 0);
+                }
+            });
+
+            // Shuffle Play Album
+            document.getElementById('btn-album-shuffle').addEventListener('click', () => {
+                if (albumSongs.length > 0) {
+                    const shuffled = [...albumSongs].sort(() => Math.random() - 0.5);
+                    window.playTrack?.(shuffled[0], shuffled, 0);
+                }
+            });
+
+            // Add Album to Queue
+            document.getElementById('btn-album-queue').addEventListener('click', () => {
+                if (albumSongs.length > 0) {
+                    const state = window.UMusic;
+                    if (state && Array.isArray(state.queue)) {
+                        state.queue.push(...albumSongs);
+                        alert('Album added to queue.');
+                    }
+                }
+            });
+
+            // Add Album to Playlist
+            document.getElementById('btn-album-playlist').addEventListener('click', () => {
+                if (albumSongs.length > 0) {
+                    // Open modal for first song, but we'll add all of them
+                    const modal = document.getElementById('playlist-select-modal');
+                    const list = document.getElementById('playlist-select-list');
+                    if (!modal || !list) return;
+
+                    let playlists = [];
+                    try {
+                        playlists = JSON.parse(localStorage.getItem('umusic_playlists') || '[]');
+                    } catch(e) {
+                        playlists = [];
+                    }
+
+                    if (playlists.length === 0) {
+                        list.innerHTML = `<p style="font-size:0.8rem; color:var(--text-muted); text-align:center;">No playlists found. Create one first on the Playlists page.</p>`;
+                    } else {
+                        list.innerHTML = playlists.map(pl => `
+                            <button class="settings-btn" data-playlist-id="${pl.id}" style="text-align:left; width:100%;">${escapeHtml(pl.name)}</button>
+                        `).join('');
+
+                        list.querySelectorAll('button').forEach(btn => {
+                            btn.addEventListener('click', () => {
+                                const plId = btn.dataset.playlistId;
+                                const playlist = playlists.find(p => p.id === plId);
+                                if (playlist) {
+                                    let addedCount = 0;
+                                    albumSongs.forEach(song => {
+                                        if (!playlist.songs.some(s => s.id === song.id)) {
+                                            playlist.songs.push(song);
+                                            addedCount++;
+                                        }
+                                    });
+                                    localStorage.setItem('umusic_playlists', JSON.stringify(playlists));
+                                    alert(`Added ${addedCount} new songs to playlist: ${playlist.name}`);
+                                }
+                                modal.style.display = 'none';
+                            });
+                        });
+                    }
+                    modal.style.display = 'block';
+                }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,366 @@
+@{
+    ViewData["Title"] = "Settings";
+}
+
+@section Styles {
+    <style>
+        .settings-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 24px 0;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .settings-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            margin-bottom: 32px;
+        }
+
+        .settings-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .settings-section h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--accent);
+            letter-spacing: -0.02em;
+        }
+
+        .settings-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .settings-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .settings-row:first-child {
+            padding-top: 0;
+        }
+
+        .settings-info {
+            flex: 1;
+            padding-right: 20px;
+        }
+
+        .settings-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .settings-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        .settings-control select, 
+        .settings-control input[type="text"] {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            outline: none;
+            font-size: 0.9rem;
+            min-width: 140px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .settings-control select:focus {
+            border-color: var(--accent);
+        }
+
+        /* Toggle switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 46px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background-color: rgba(255,255,255,0.15);
+            transition: .3s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+
+        .settings-btn {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .settings-btn:hover {
+            background: rgba(255,255,255,0.12);
+        }
+
+        .settings-btn.btn-danger {
+            background: rgba(252, 60, 68, 0.1);
+            border-color: rgba(252, 60, 68, 0.2);
+            color: var(--accent);
+        }
+
+        .settings-btn.btn-danger:hover {
+            background: var(--accent);
+            color: #fff;
+        }
+    </style>
+}
+
+<div class="settings-container">
+    <h1 class="settings-title">Settings</h1>
+
+    <!-- ─── Playback settings ─── -->
+    <div class="settings-section">
+        <h2>Playback Preferences</h2>
+        
+        <div class="settings-row">
+            <div class="settings-info">
+                <div class="settings-label">Streaming Audio Quality</div>
+                <div class="settings-desc">Choose your preferred streaming sound quality. High quality uses more data.</div>
+            </div>
+            <div class="settings-control">
+                <select id="set-audio-quality">
+                    <option value="auto">Auto (Recommended)</option>
+                    <option value="low">Low (96kbps)</option>
+                    <option value="medium">Medium (128kbps)</option>
+                    <option value="high">High (256kbps)</option>
+                    <option value="lossless">Lossless (Hi-Res)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="settings-row">
+            <div class="settings-info">
+                <div class="settings-label">Gapless Playback</div>
+                <div class="settings-desc">Prebuffer the next track to transition between songs seamlessly.</div>
+            </div>
+            <div class="settings-control">
+                <label class="switch">
+                    <input type="checkbox" id="set-gapless" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="settings-row">
+            <div class="settings-info">
+                <div class="settings-label">Crossfade Tracks</div>
+                <div class="settings-desc">Smooth transition by overlapping the end of one track with the start of the next.</div>
+            </div>
+            <div class="settings-control">
+                <select id="set-crossfade">
+                    <option value="0">Off</option>
+                    <option value="2">2 seconds</option>
+                    <option value="5">5 seconds</option>
+                    <option value="8">8 seconds</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Downloads settings ─── -->
+    <div class="settings-section">
+        <h2>Download Preferences</h2>
+
+        <div class="settings-row">
+            <div class="settings-info">
+                <div class="settings-label">Download Quality</div>
+                <div class="settings-desc">Quality of the audio files stored for offline listening.</div>
+            </div>
+            <div class="settings-control">
+                <select id="set-download-quality">
+                    <option value="medium">Normal (128kbps)</option>
+                    <option value="high">High (256kbps)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="settings-row">
+            <div class="settings-info">
+                <div class="settings-label">Download over Wi-Fi only</div>
+                <div class="settings-desc">Restrict downloads to active Wi-Fi connections to save mobile data.</div>
+            </div>
+            <div class="settings-control">
+                <label class="switch">
+                    <input type="checkbox" id="set-wifi-only" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="settings-row">
+            <div class="settings-info">
+                <div class="settings-label">Offline Cache</div>
+                <div class="settings-desc">Remove all downloaded tracks from your local device storage.</div>
+            </div>
+            <div class="settings-control">
+                <button class="settings-btn btn-danger" id="btn-clear-cache">Clear Downloads</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Appearance ─── -->
+    <div class="settings-section">
+        <h2>Appearance & Theme</h2>
+
+        <div class="settings-row">
+            <div class="settings-info">
+                <div class="settings-label">Color Scheme</div>
+                <div class="settings-desc">Switch between Dark and Light mode or let the device decide automatically.</div>
+            </div>
+            <div class="settings-control">
+                <select id="set-theme">
+                    <option value="dark">Dark Mode</option>
+                    <option value="light">Light Mode</option>
+                    <option value="system">System Default</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Highlight settings sidebar link
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('is-active'));
+            document.getElementById('nav-settings')?.classList.add('is-active');
+
+            // Load Settings
+            const audioQuality = localStorage.getItem('umusic_audio_quality') || 'auto';
+            const gapless = localStorage.getItem('umusic_gapless') !== 'false';
+            const crossfade = localStorage.getItem('umusic_crossfade') || '0';
+            const downloadQuality = localStorage.getItem('umusic_download_quality') || 'high';
+            const wifiOnly = localStorage.getItem('umusic_wifi_only') !== 'false';
+            const theme = localStorage.getItem('umusic_theme') || 'dark';
+
+            // Bind values to DOM
+            document.getElementById('set-audio-quality').value = audioQuality;
+            document.getElementById('set-gapless').checked = gapless;
+            document.getElementById('set-crossfade').value = crossfade;
+            document.getElementById('set-download-quality').value = downloadQuality;
+            document.getElementById('set-wifi-only').checked = wifiOnly;
+            document.getElementById('set-theme').value = theme;
+
+            // Change listeners
+            document.getElementById('set-audio-quality').addEventListener('change', (e) => {
+                localStorage.setItem('umusic_audio_quality', e.target.value);
+            });
+            document.getElementById('set-gapless').addEventListener('change', (e) => {
+                localStorage.setItem('umusic_gapless', e.target.checked);
+            });
+            document.getElementById('set-crossfade').addEventListener('change', (e) => {
+                localStorage.setItem('umusic_crossfade', e.target.value);
+            });
+            document.getElementById('set-download-quality').addEventListener('change', (e) => {
+                localStorage.setItem('umusic_download_quality', e.target.value);
+            });
+            document.getElementById('set-wifi-only').addEventListener('change', (e) => {
+                localStorage.setItem('umusic_wifi_only', e.target.checked);
+            });
+            
+            // Theme selector logic
+            document.getElementById('set-theme').addEventListener('change', (e) => {
+                const selectedTheme = e.target.value;
+                localStorage.setItem('umusic_theme', selectedTheme);
+                applyTheme(selectedTheme);
+            });
+
+            // Clear cache
+            document.getElementById('btn-clear-cache').addEventListener('click', async () => {
+                if (confirm('Are you sure you want to delete all offline downloaded songs?')) {
+                    if ('caches' in window) {
+                        const keys = await caches.keys();
+                        for (const key of keys) {
+                            if (key.includes('umusic-downloads')) {
+                                await caches.delete(key);
+                            }
+                        }
+                    }
+                    localStorage.removeItem('umusic_downloaded_metadata');
+                    alert('Offline cache cleared successfully.');
+                }
+            });
+
+            function applyTheme(t) {
+                if (t === 'light') {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                    // Simple light overrides directly to custom properties
+                    document.documentElement.style.setProperty('--bg-primary', '#f5f5f7');
+                    document.documentElement.style.setProperty('--bg-secondary', '#ffffff');
+                    document.documentElement.style.setProperty('--bg-card', '#ffffff');
+                    document.documentElement.style.setProperty('--bg-hover', '#f0f0f2');
+                    document.documentElement.style.setProperty('--text-primary', '#1d1d1f');
+                    document.documentElement.style.setProperty('--text-secondary', '#6e6e73');
+                    document.documentElement.style.setProperty('--text-muted', '#86868b');
+                    document.documentElement.style.setProperty('--border', 'rgba(0,0,0,0.08)');
+                } else if (t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.removeAttribute('data-theme');
+                    document.documentElement.style.removeProperty('--bg-primary');
+                    document.documentElement.style.removeProperty('--bg-secondary');
+                    document.documentElement.style.removeProperty('--bg-card');
+                    document.documentElement.style.removeProperty('--bg-hover');
+                    document.documentElement.style.removeProperty('--text-primary');
+                    document.documentElement.style.removeProperty('--text-secondary');
+                    document.documentElement.style.removeProperty('--text-muted');
+                    document.documentElement.style.removeProperty('--border');
+                }
+            }
+        });
+    </script>
+}

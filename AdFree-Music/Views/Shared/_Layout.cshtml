@@ -1,49 +1,410 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - AdFree_Music</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/AdFree_Music.styles.css" asp-append-version="true" />
+    <meta name="description" content="U-Music — Stream millions of songs in high quality. No ads, no login required. Discover trending music instantly." />
+    <meta name="theme-color" content="#0a0a0a" />
+    <meta property="og:title" content="U-Music — Premium Music Streaming" />
+    <meta property="og:description" content="Stream any song in high quality. No ads. No login." />
+    <title>@ViewData["Title"] — U-Music</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true" />
+    @RenderSection("Styles", required: false)
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">AdFree_Music</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
+    <!-- Sidebar Overlay (mobile) -->
+    <div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true"></div>
+
+    <div class="app-shell">
+        <!-- ─── Sidebar ─── -->
+        <aside id="sidebar" class="sidebar" role="navigation" aria-label="Main Navigation">
+            <!-- Logo -->
+            <a class="sidebar__logo" href="/" aria-label="U-Music Home">
+                <div class="sidebar__logo-icon" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                        <path d="M9 18V5l12-2v13"/>
+                        <circle cx="6" cy="18" r="3"/>
+                        <circle cx="18" cy="16" r="3"/>
+                    </svg>
+                </div>
+                <span class="sidebar__logo-text">U<span>-Music</span></span>
+            </a>
+
+            <!-- Inline search (sidebar) -->
+            <div class="sidebar__search">
+                <div class="sidebar__search-wrap">
+                    <span class="sidebar__search-icon" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                        </svg>
+                    </span>
+                    <input
+                        id="sidebar-search"
+                        type="search"
+                        class="sidebar__search-input"
+                        placeholder="Search songs…"
+                        autocomplete="off"
+                        spellcheck="false"
+                        aria-label="Search music"
+                    />
                 </div>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
+
+            <!-- Navigation -->
+            <nav class="sidebar__nav">
+                <div class="sidebar__nav-group">
+                    <p class="sidebar__nav-label">Menu</p>
+                    <a class="nav-item" href="/" data-path="/" id="nav-home" aria-label="Home">
+                        <span class="nav-item__icon" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                <polyline points="9 22 9 12 15 12 15 22"/>
+                            </svg>
+                        </span>
+                        Home
+                    </a>
+                    <a class="nav-item" href="/Search" data-path="/search" id="nav-search" aria-label="Search">
+                        <span class="nav-item__icon" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                            </svg>
+                        </span>
+                        Search
+                    </a>
+                </div>
+
+                <div class="sidebar__nav-group">
+                    <p class="sidebar__nav-label">Explore</p>
+                    <span class="nav-item" tabindex="0" onclick="filterGenre('pop')" aria-label="Browse Pop">
+                        <span class="nav-item__icon" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+                            </svg>
+                        </span>
+                        Pop
+                    </span>
+                    <span class="nav-item" tabindex="0" onclick="filterGenre('bollywood')" aria-label="Browse Bollywood">
+                        <span class="nav-item__icon" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                            </svg>
+                        </span>
+                        Bollywood
+                    </span>
+                    <span class="nav-item" tabindex="0" onclick="filterGenre('hip hop')" aria-label="Browse Hip Hop">
+                        <span class="nav-item__icon" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+                                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+                            </svg>
+                        </span>
+                        Hip Hop
+                    </span>
+                </div>
+
+                <div class="sidebar__nav-group">
+                    <p class="sidebar__nav-label">Library</p>
+                    <a class="nav-item" href="/Playlists" id="nav-playlists" aria-label="Playlists">
+                        <span class="nav-item__icon" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            </svg>
+                        </span>
+                        Playlists
+                    </a>
+                    <a class="nav-item" href="/Downloads" id="nav-downloads" aria-label="Downloads">
+                        <span class="nav-item__icon" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                            </svg>
+                        </span>
+                        Downloads
+                    </a>
+                    <a class="nav-item" href="/Settings" id="nav-settings" aria-label="Settings">
+                        <span class="nav-item__icon" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                            </svg>
+                        </span>
+                        Settings
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- ─── Main Content ─── -->
+        <main class="main-content" id="main-content">
+            <!-- Sticky Top Header -->
+            <header class="top-header glass">
+                <div class="top-header__navigation">
+                    <button class="nav-btn" onclick="history.back()" aria-label="Go back">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 18 9 12 15 6"/>
+                        </svg>
+                    </button>
+                    <button class="nav-btn" onclick="history.forward()" aria-label="Go forward">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="top-header__search">
+                    <span class="top-header__search-icon" aria-hidden="true">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                        </svg>
+                    </span>
+                    <input
+                        id="global-search"
+                        type="search"
+                        class="top-header__search-input"
+                        placeholder="Search songs, artists, albums..."
+                        autocomplete="off"
+                        spellcheck="false"
+                        aria-label="Search U-Music"
+                    />
+                    <button id="global-search-clear" class="top-header__search-clear hidden" aria-label="Clear search">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <div class="content-inner">
+                @RenderBody()
+            </div>
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - AdFree_Music - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <!-- ─── Player Bar ─── -->
+    <div id="player-bar" class="player-bar" role="region" aria-label="Music Player">
+        <!-- Track Info -->
+        <div class="player-bar__track">
+            <div id="player-art" class="player-bar__art no-track" aria-hidden="true">
+                <img id="player-art-img" src="" alt="Album art" style="display:none" />
+                <svg id="player-art-placeholder" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2">
+                    <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+                </svg>
+            </div>
+            <div class="player-bar__track-info">
+                <div id="player-song-name" class="player-bar__song-name empty">Nothing playing</div>
+                <div id="player-artist-name" class="player-bar__artist-name"></div>
+            </div>
         </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+
+        <!-- Controls + Progress -->
+        <div class="player-bar__controls">
+            <div class="player-bar__buttons">
+                <button id="player-shuffle-btn" class="ctrl-btn" title="Shuffle (S)" aria-label="Toggle shuffle">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
+                        <polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+                    </svg>
+                </button>
+                <button id="player-prev-btn" class="ctrl-btn" title="Previous (Shift+←)" aria-label="Previous track">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/>
+                    </svg>
+                </button>
+                <button id="player-play-btn" class="ctrl-btn ctrl-btn--play" title="Play/Pause (Space)" aria-label="Play or pause">
+                    <svg id="player-play-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                        <polygon points="5,3 19,12 5,21"/>
+                    </svg>
+                </button>
+                <button id="player-next-btn" class="ctrl-btn" title="Next (Shift+→)" aria-label="Next track">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/>
+                    </svg>
+                </button>
+                <button id="player-repeat-btn" class="ctrl-btn" title="Repeat" aria-label="Toggle repeat" data-repeat="0">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.4">
+                        <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                        <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="player-bar__progress">
+                <span id="player-time-elapsed" class="player-bar__time">0:00</span>
+                <div id="progress-track" class="progress-track" role="slider" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <div id="progress-fill" class="progress-fill" style="width:0%"></div>
+                </div>
+                <span id="player-time-duration" class="player-bar__time" style="text-align:right">--:--</span>
+            </div>
+        </div>
+
+        <!-- Volume -->
+        <div class="player-bar__volume">
+            <button id="player-queue-btn" class="ctrl-btn" title="Open Queue (Q)" aria-label="Open music queue" style="margin-right: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                    <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+                </svg>
+            </button>
+            <button id="player-volume-btn" class="ctrl-btn" title="Mute (M)" aria-label="Toggle mute">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                </svg>
+            </button>
+            <div id="volume-track" class="volume-track" role="slider" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="80">
+                <div id="volume-fill" class="volume-fill" style="width:80%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Nav -->
+    <nav class="mobile-nav" aria-label="Mobile Navigation">
+        <button class="mobile-nav-btn" data-href="/" aria-label="Home" id="mobile-nav-home">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            Home
+        </button>
+        <button class="mobile-nav-btn" data-href="/Search" aria-label="Search" id="mobile-nav-search">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            Search
+        </button>
+        <button class="mobile-nav-btn" onclick="document.getElementById('sidebar-open-btn')?.click()" aria-label="Menu" id="mobile-nav-menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+            More
+        </button>
+    </nav>
+
+    <!-- Sidebar toggle button for mobile (hidden visually, triggered by mobile nav) -->
+    <button id="sidebar-open-btn" class="sr-only" aria-label="Open sidebar menu">Menu</button>
+
+    <script src="~/js/app.js" asp-append-version="true"></script>
+    <script src="~/js/player.js" asp-append-version="true"></script>
+    @RenderSection("Scripts", required: false)
+
+    <script>
+        // Global search input synchronization and behavior
+        const globalSearch = document.getElementById('global-search');
+        const globalClear = document.getElementById('global-search-clear');
+        
+        if (globalSearch) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const q = urlParams.get('q');
+            if (q) {
+                globalSearch.value = q;
+                globalClear?.classList.remove('hidden');
+            }
+
+            globalSearch.addEventListener('input', function() {
+                globalClear?.classList.toggle('hidden', this.value.length === 0);
+                
+                // If on search page, mirror value and trigger search
+                if (window.location.pathname.toLowerCase() === '/search') {
+                    const searchInput = document.getElementById('search-input');
+                    if (searchInput) {
+                        searchInput.value = this.value;
+                        searchInput.dispatchEvent(new Event('input'));
+                    }
+                }
+            });
+
+            globalClear?.addEventListener('click', function() {
+                globalSearch.value = '';
+                globalClear.classList.add('hidden');
+                globalSearch.focus();
+                
+                if (window.location.pathname.toLowerCase() === '/search') {
+                    const searchInput = document.getElementById('search-input');
+                    if (searchInput) {
+                        searchInput.value = '';
+                        searchInput.dispatchEvent(new Event('input'));
+                    }
+                }
+            });
+
+            globalSearch.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && this.value.trim()) {
+                    if (window.location.pathname.toLowerCase() !== '/search') {
+                        window.location.href = '/Search?q=' + encodeURIComponent(this.value.trim());
+                    }
+                }
+            });
+        }
+
+        // Sidebar inline search: redirect to search page
+        document.getElementById('sidebar-search')?.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && this.value.trim()) {
+                window.location.href = '/Search?q=' + encodeURIComponent(this.value.trim());
+            }
+        });
+
+        // Player art show/hide placeholder
+        const artImg = document.getElementById('player-art-img');
+        const artPlaceholder = document.getElementById('player-art-placeholder');
+        const origPlayTrack = window.playTrack;
+        window.playTrack = function (song, queue, idx) {
+            if (artImg && artPlaceholder) {
+                artImg.style.display = 'block';
+                artPlaceholder.style.display = 'none';
+            }
+            origPlayTrack?.(song, queue, idx);
+        };
+
+        // Filter genre helper (redirects to search)
+        function filterGenre(genre) {
+            window.location.href = '/Search?q=' + encodeURIComponent(genre);
+        }
+    </script>
+
+    <!-- ─── Queue Drawer ─── -->
+    <div id="queue-drawer" class="queue-drawer" style="display:none;">
+        <div class="queue-drawer__header">
+            <h3>Play Queue</h3>
+            <div class="queue-drawer__header-actions">
+                <button class="settings-btn btn-danger btn-sm" id="btn-clear-queue-list">Clear All</button>
+                <button id="queue-drawer-close" class="ctrl-btn" style="font-size: 1.5rem; background:none;">×</button>
+            </div>
+        </div>
+        <div class="queue-drawer__section">
+            <h4 class="queue-drawer__sub">Now Playing</h4>
+            <div id="queue-now-playing-container"></div>
+        </div>
+        <div class="queue-drawer__section" style="flex: 1; overflow-y: auto;">
+            <h4 class="queue-drawer__sub">Next Up</h4>
+            <div id="queue-next-container"></div>
+        </div>
+    </div>
+
+    <!-- ─── Song Options Dropdown Menu ─── -->
+    <div id="song-options-menu" class="song-options-dropdown" style="display:none;">
+        <button data-action="play">Play Now</button>
+        <button data-action="playnext">Play Next</button>
+        <button data-action="addqueue">Add to Queue</button>
+        <button data-action="playlist">Add to Playlist...</button>
+        <button data-action="download">Download Offline</button>
+        <button data-action="album">View Album</button>
+        <button data-action="artist">View Artist</button>
+        <button data-action="share">Share Track</button>
+        <button data-action="info">Song Info</button>
+    </div>
+
+    <!-- ─── Playlist Selection Modal ─── -->
+    <div id="playlist-select-modal" class="playlist-select-modal glass" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h3 style="font-size:1.1rem; font-weight:700;">Add to Playlist</h3>
+            <button id="playlist-select-close" style="font-size:1.5rem; cursor:pointer; background:none; border:none; color:white;">×</button>
+        </div>
+        <div id="playlist-select-list" style="max-height:200px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
 </body>
 </html>

@@ -1,32 +1,35 @@
-using AdFree_Music.Models;
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
+using UMusic.Models;
+using UMusic.Services;
 
-namespace AdFree_Music.Controllers
+namespace UMusic.Controllers;
+
+public sealed class HomeController : Controller
 {
-    public class HomeController : Controller
+    private readonly IMusicService _musicService;
+
+    public HomeController(IMusicService musicService) => _musicService = musicService;
+
+    public async Task<IActionResult> Index(CancellationToken ct)
     {
-        private readonly ILogger<HomeController> _logger;
+        // Run all homepage sections in parallel for performance
+        var trendingTask  = _musicService.GetTrendingSongsAsync("", ct);
+        var bollywoodTask = _musicService.GetSongsByGenreAsync("bollywood hits 2025", ct);
+        var globalTask    = _musicService.GetSongsByGenreAsync("pop hits 2025", ct);
+        var albumsTask    = _musicService.GetFeaturedAlbumsAsync(ct);
+        var latestTask    = _musicService.GetSongsByGenreAsync("new songs 2025", ct);
 
-        public HomeController(ILogger<HomeController> logger)
-        {
-            _logger = logger;
-        }
+        await Task.WhenAll(trendingTask, bollywoodTask, globalTask, albumsTask, latestTask);
 
-        public IActionResult Index()
+        var vm = new HomeViewModel
         {
-            return View();
-        }
+            TrendingSongs  = await trendingTask,
+            BollywoodSongs = await bollywoodTask,
+            GlobalSongs    = await globalTask,
+            FeaturedAlbums = await albumsTask,
+            LatestSongs    = await latestTask,
+        };
 
-        public IActionResult Privacy()
-        {
-            return View();
-        }
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
+        return View(vm);
     }
 }

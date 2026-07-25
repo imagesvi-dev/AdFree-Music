@@ -1,0 +1,494 @@
+@{
+    ViewData["Title"] = "Playlists";
+}
+
+@section Styles {
+    <style>
+        .playlists-container {
+            padding: 24px 0;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .playlists-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+        }
+
+        .playlists-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+        }
+
+        /* Playlist Grid */
+        .playlist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 24px;
+        }
+
+        .playlist-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            cursor: pointer;
+            transition: all var(--transition-med);
+            position: relative;
+        }
+
+        .playlist-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-album);
+        }
+
+        .playlist-art {
+            aspect-ratio: 1;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            background: var(--bg-tertiary);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 2px;
+            margin-bottom: 12px;
+            position: relative;
+            box-shadow: var(--shadow-card);
+        }
+
+        .playlist-art.fallback {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .playlist-art img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .playlist-art-single {
+            grid-column: 1 / span 2;
+            grid-row: 1 / span 2;
+        }
+
+        .playlist-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .playlist-count {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+
+        .playlist-actions-btn {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            z-index: 10;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity var(--transition-fast);
+        }
+
+        .playlist-card:hover .playlist-actions-btn {
+            opacity: 1;
+        }
+
+        /* Detail view styling */
+        .playlist-detail-header {
+            display: flex;
+            gap: 32px;
+            margin-bottom: 40px;
+            align-items: flex-end;
+        }
+
+        .playlist-detail-art {
+            width: 200px;
+            height: 200px;
+            flex-shrink: 0;
+        }
+
+        .playlist-detail-info {
+            flex: 1;
+        }
+
+        .playlist-detail-info .tag {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--accent);
+            letter-spacing: 0.08em;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .playlist-detail-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            margin-bottom: 8px;
+            line-height: 1.1;
+        }
+
+        .playlist-detail-meta {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .playlist-detail-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        @@media (max-width: 600px) {
+            .playlist-detail-header {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            .playlist-detail-art {
+                width: 160px;
+                height: 160px;
+            }
+            .playlist-detail-actions {
+                justify-content: center;
+            }
+        }
+    </style>
+}
+
+<div class="playlists-container">
+    <!-- Main Grid View -->
+    <div id="playlists-grid-view">
+        <div class="playlists-header">
+            <h1 class="playlists-title">Playlists</h1>
+            <button class="btn-3d" id="btn-create-playlist" aria-label="Create new playlist">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Create Playlist
+            </button>
+        </div>
+        <div class="playlist-grid" id="playlist-grid-container">
+            <!-- JS populated playlists cards -->
+        </div>
+    </div>
+
+    <!-- Detail List View -->
+    <div id="playlist-detail-view" style="display:none">
+        <button class="btn-3d-secondary" id="btn-back-to-grid" style="margin-bottom: 24px;">← Back to Playlists</button>
+        
+        <div class="playlist-detail-header" id="detail-header-container">
+            <!-- JS populated header info -->
+        </div>
+
+        <div id="playlist-songs-container">
+            <!-- JS populated playlist songs list -->
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Highlight Playlists sidebar link
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('is-active'));
+            document.getElementById('nav-playlists')?.classList.add('is-active');
+
+            // Load Playlists
+            let playlists = loadPlaylists();
+
+            renderPlaylistsGrid();
+
+            // Create Playlist
+            document.getElementById('btn-create-playlist').addEventListener('click', () => {
+                const name = prompt('Enter a name for the new playlist:');
+                if (name && name.trim()) {
+                    const cleanName = name.trim();
+                    if (playlists.some(p => p.name.toLowerCase() === cleanName.toLowerCase())) {
+                        alert('A playlist with this name already exists.');
+                        return;
+                    }
+                    const newPlaylist = {
+                        id: 'pl_' + Date.now(),
+                        name: cleanName,
+                        songs: []
+                    };
+                    playlists.push(newPlaylist);
+                    savePlaylists(playlists);
+                    renderPlaylistsGrid();
+                }
+            });
+
+            // Back to Grid
+            document.getElementById('btn-back-to-grid').addEventListener('click', () => {
+                document.getElementById('playlist-detail-view').style.display = 'none';
+                document.getElementById('playlists-grid-view').style.display = 'block';
+                renderPlaylistsGrid();
+            });
+
+            function loadPlaylists() {
+                try {
+                    return JSON.parse(localStorage.getItem('umusic_playlists') || '[]');
+                } catch(e) {
+                    return [];
+                }
+            }
+
+            function savePlaylists(pl) {
+                localStorage.setItem('umusic_playlists', JSON.stringify(pl));
+            }
+
+            function renderPlaylistsGrid() {
+                playlists = loadPlaylists();
+                const container = document.getElementById('playlist-grid-container');
+                if (!container) return;
+
+                if (playlists.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state" style="grid-column: 1 / -1;">
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            </svg>
+                            <p class="empty-state__title">No Playlists</p>
+                            <p class="empty-state__sub">Create a playlist and start organizing your favorite tracks.</p>
+                        </div>`;
+                    return;
+                }
+
+                container.innerHTML = playlists.map(playlist => {
+                    const songCount = playlist.songs.length;
+                    
+                    // Render custom artwork collage based on first 4 songs
+                    let artHtml = '';
+                    if (songCount === 0) {
+                        artHtml = `
+                            <div class="playlist-art fallback">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2">
+                                    <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+                                </svg>
+                            </div>`;
+                    } else {
+                        const images = playlist.songs.slice(0, 4).map(s => s.image || artFallback());
+                        if (images.length === 1) {
+                            artHtml = `
+                                <div class="playlist-art">
+                                    <img class="playlist-art-single" src="${images[0]}" onerror="this.src=artFallback()"/>
+                                </div>`;
+                        } else {
+                            artHtml = `
+                                <div class="playlist-art">
+                                    <img src="${images[0] || artFallback()}" onerror="this.src=artFallback()"/>
+                                    <img src="${images[1] || artFallback()}" onerror="this.src=artFallback()"/>
+                                    <img src="${images[2] || artFallback()}" onerror="this.src=artFallback()"/>
+                                    <img src="${images[3] || artFallback()}" onerror="this.src=artFallback()"/>
+                                </div>`;
+                        }
+                    }
+
+                    return `
+                        <div class="playlist-card" data-playlist-id="${playlist.id}">
+                            <button class="playlist-actions-btn" data-action="delete" data-playlist-id="${playlist.id}" title="Delete Playlist">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
+                            </button>
+                            ${artHtml}
+                            <div class="playlist-name">${escapeHtml(playlist.name)}</div>
+                            <div class="playlist-count">${songCount} track${songCount !== 1 ? 's' : ''}</div>
+                        </div>`;
+                }).join('');
+
+                // Bind Card clicks
+                container.querySelectorAll('.playlist-card').forEach(card => {
+                    card.addEventListener('click', (e) => {
+                        const deleteBtn = e.target.closest('[data-action="delete"]');
+                        const playlistId = card.dataset.playlistId;
+
+                        if (deleteBtn) {
+                            e.stopPropagation();
+                            if (confirm('Are you sure you want to delete this playlist?')) {
+                                playlists = playlists.filter(p => p.id !== playlistId);
+                                savePlaylists(playlists);
+                                renderPlaylistsGrid();
+                            }
+                        } else {
+                            showPlaylistDetail(playlistId);
+                        }
+                    });
+                });
+            }
+
+            function showPlaylistDetail(playlistId) {
+                const playlist = playlists.find(p => p.id === playlistId);
+                if (!playlist) return;
+
+                document.getElementById('playlists-grid-view').style.display = 'none';
+                document.getElementById('playlist-detail-view').style.display = 'block';
+
+                const headerContainer = document.getElementById('detail-header-container');
+                const songsContainer = document.getElementById('playlist-songs-container');
+
+                // Render Header
+                const songCount = playlist.songs.length;
+                let artHtml = '';
+                if (songCount === 0) {
+                    artHtml = `
+                        <div class="playlist-art fallback playlist-detail-art">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2">
+                                <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+                            </svg>
+                        </div>`;
+                } else {
+                    const images = playlist.songs.slice(0, 4).map(s => s.image || artFallback());
+                    if (images.length === 1) {
+                        artHtml = `
+                            <div class="playlist-art playlist-detail-art">
+                                <img class="playlist-art-single" src="${images[0]}" onerror="this.src=artFallback()"/>
+                            </div>`;
+                    } else {
+                        artHtml = `
+                            <div class="playlist-art playlist-detail-art">
+                                <img src="${images[0] || artFallback()}" onerror="this.src=artFallback()"/>
+                                <img src="${images[1] || artFallback()}" onerror="this.src=artFallback()"/>
+                                <img src="${images[2] || artFallback()}" onerror="this.src=artFallback()"/>
+                                <img src="${images[3] || artFallback()}" onerror="this.src=artFallback()"/>
+                            </div>`;
+                    }
+                }
+
+                headerContainer.innerHTML = `
+                    ${artHtml}
+                    <div class="playlist-detail-info">
+                        <span class="tag">PLAYLIST</span>
+                        <h2 class="playlist-detail-title" id="detail-playlist-title">${escapeHtml(playlist.name)}</h2>
+                        <div class="playlist-detail-meta">${songCount} song${songCount !== 1 ? 's' : ''} • U-Music User Library</div>
+                        <div class="playlist-detail-actions">
+                            <button class="btn-3d" id="btn-play-playlist" ${songCount === 0 ? 'disabled' : ''}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                    <polygon points="5,3 19,12 5,21" />
+                                </svg>
+                                Play Playlist
+                            </button>
+                            <button class="btn-3d-secondary" id="btn-rename-playlist">Rename</button>
+                        </div>
+                    </div>`;
+
+                // Render Songs List
+                if (songCount === 0) {
+                    songsContainer.innerHTML = `
+                        <div class="empty-state">
+                            <p class="empty-state__title">Empty Playlist</p>
+                            <p class="empty-state__sub">Browse or search for songs, and use the option menu (⋮) to add them to this playlist.</p>
+                        </div>`;
+                    return;
+                }
+
+                const headerHtml = `
+                    <div class="song-list-header">
+                        <span class="song-list-header__num"><span class="col-label">#</span></span>
+                        <span class="song-list-header__art"></span>
+                        <span class="song-list-header__info"><span class="col-label">Title</span></span>
+                        <span class="song-list-header__album"><span class="col-label">Album</span></span>
+                        <span class="song-list-header__dur">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.5">
+                                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                        </span>
+                    </div>`;
+
+                const itemsHtml = playlist.songs.map((song, i) => {
+                    const art = song.image || artFallback();
+                    const name = song.name || 'Unknown';
+                    const artist = song.artist || 'Unknown Artist';
+                    const album = song.album || '';
+                    const dur = song.durationFormatted || '--:--';
+
+                    return `
+                        <div class="song-list-item" data-song-id="${song.id}" tabindex="0" role="button">
+                            <span class="song-list-item__num">${i + 1}</span>
+                            <div class="song-list-item__art">
+                                <img src="${art}" alt="${name}" onerror="this.src=artFallback()">
+                                <div class="song-list-item__art-overlay">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+                                </div>
+                            </div>
+                            <div class="song-list-item__info">
+                                <div class="song-list-item__name">${name}</div>
+                                <div class="song-list-item__artist">${artist}</div>
+                            </div>
+                            <div class="song-list-item__album">${album}</div>
+                            <div class="song-list-item__duration" style="display: flex; align-items: center; gap: 12px;">
+                                <span>${dur}</span>
+                                <button class="btn-remove-song" data-song-id="${song.id}" title="Remove from playlist" style="color: var(--text-muted); padding: 4px;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>`;
+                }).join('');
+
+                songsContainer.innerHTML = `<div class="song-list">${headerHtml}${itemsHtml}</div>`;
+
+                // Bind Play Playlist
+                document.getElementById('btn-play-playlist')?.addEventListener('click', () => {
+                    if (playlist.songs.length > 0) {
+                        window.playTrack?.(playlist.songs[0], playlist.songs, 0);
+                    }
+                });
+
+                // Bind Rename Playlist
+                document.getElementById('btn-rename-playlist')?.addEventListener('click', () => {
+                    const newName = prompt('Enter a new name for this playlist:', playlist.name);
+                    if (newName && newName.trim()) {
+                        playlist.name = newName.trim();
+                        savePlaylists(playlists);
+                        document.getElementById('detail-playlist-title').textContent = playlist.name;
+                    }
+                });
+
+                // Bind Song Item Clicks
+                songsContainer.querySelectorAll('.song-list-item').forEach((el) => {
+                    const songId = el.dataset.songId;
+                    el.addEventListener('click', (e) => {
+                        if (e.target.closest('.btn-remove-song')) return;
+                        
+                        const idx = playlist.songs.findIndex(s => s.id === songId);
+                        window.playTrack?.(playlist.songs[idx], playlist.songs, idx);
+                    });
+                });
+
+                // Bind Remove Song Clicks
+                songsContainer.querySelectorAll('.btn-remove-song').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const songId = btn.dataset.songId;
+                        if (confirm('Remove this song from the playlist?')) {
+                            playlist.songs = playlist.songs.filter(s => s.id !== songId);
+                            savePlaylists(playlists);
+                            showPlaylistDetail(playlistId);
+                        }
+                    });
+                });
+            }
+        });
+    </script>
+}
