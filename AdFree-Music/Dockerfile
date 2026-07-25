@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copy csproj and restore dependencies
@@ -12,7 +12,7 @@ COPY . .
 RUN dotnet build "AdFree-Music.csproj" -c Release -o /app/build
 RUN dotnet publish "AdFree-Music.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 
 # Install python3 and ffmpeg. 
@@ -27,4 +27,4 @@ COPY --from=build /app/publish .
 ENV ASPNETCORE_URLS=http://+:${PORT:-8080}
 
 # Railway expects apps to listen on 0.0.0.0
-ENTRYPOINT ["dotnet", "AdFreeMusic.dll"]
+ENTRYPOINT ["dotnet", "AdFree-Music.dll"]
