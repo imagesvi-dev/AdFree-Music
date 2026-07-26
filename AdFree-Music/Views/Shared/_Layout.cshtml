@@ -191,6 +191,8 @@
                             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                         </svg>
                     </button>
+                    <!-- Search Suggestions Dropdown -->
+                    <div id="global-search-suggestions" class="search-suggestions-dropdown hidden"></div>
                 </div>
             </header>
 
@@ -202,8 +204,15 @@
 
     <!-- ─── Player Bar ─── -->
     <div id="player-bar" class="player-bar" role="region" aria-label="Music Player">
+        <!-- Close Full Player Button -->
+        <button id="player-close-expanded-btn" class="player-bar__close-btn" aria-label="Close full player">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        </button>
+
         <!-- Track Info -->
-        <div class="player-bar__track">
+        <div id="player-track-container" class="player-bar__track">
             <div id="player-art" class="player-bar__art no-track" aria-hidden="true">
                 <img id="player-art-img" src="" alt="Album art" style="display:none" />
                 <svg id="player-art-placeholder" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2">
@@ -313,6 +322,7 @@
         // Global search input synchronization and behavior
         const globalSearch = document.getElementById('global-search');
         const globalClear = document.getElementById('global-search-clear');
+        const searchSuggestions = document.getElementById('global-search-suggestions');
         
         if (globalSearch) {
             const urlParams = new URLSearchParams(window.location.search);
@@ -322,9 +332,63 @@
                 globalClear?.classList.remove('hidden');
             }
 
+            // Fetch suggestions
+            const fetchSuggestions = window.debounce?.(async (query) => {
+                if (!query || query.length < 2) {
+                    searchSuggestions.classList.add('hidden');
+                    return;
+                }
+                
+                searchSuggestions.innerHTML = '<div class="search-suggestion-msg">Searching...</div>';
+                searchSuggestions.classList.remove('hidden');
+
+                try {
+                    const resp = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=5`);
+                    if (!resp.ok) throw new Error();
+                    const data = await resp.json();
+                    const songs = (data.songs || []).filter(s => s && typeof s === 'object');
+                    
+                    if (songs.length === 0) {
+                        searchSuggestions.innerHTML = '<div class="search-suggestion-msg">No results found</div>';
+                        return;
+                    }
+
+                    searchSuggestions.innerHTML = songs.slice(0, 6).map(song => `
+                        <div class="search-suggestion-item" data-id="${window.escapeHtml?.(song.id)}">
+                            <img src="${window.escapeHtml?.(song.image || window.artFallback?.())}" class="search-suggestion-art" onerror="this.src=window.artFallback?.()" />
+                            <div class="search-suggestion-info">
+                                <div class="search-suggestion-name">${window.escapeHtml?.(song.name || 'Unknown')}</div>
+                                <div class="search-suggestion-artist">${window.escapeHtml?.(song.artist || 'Unknown Artist')}</div>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    // Bind clicks to play song immediately or go to search page
+                    searchSuggestions.querySelectorAll('.search-suggestion-item').forEach((item, index) => {
+                        item.addEventListener('click', () => {
+                            searchSuggestions.classList.add('hidden');
+                            if (window.playTrack && songs[index]) {
+                                window.playTrack(songs[index], songs, index);
+                            } else {
+                                window.location.href = '/Search?q=' + encodeURIComponent(songs[index].name);
+                            }
+                        });
+                    });
+                } catch {
+                    searchSuggestions.innerHTML = '<div class="search-suggestion-msg">Error loading suggestions</div>';
+                }
+            }, 300) || function(){};
+
             globalSearch.addEventListener('input', function() {
+                const val = this.value.trim();
                 globalClear?.classList.toggle('hidden', this.value.length === 0);
                 
+                if (val.length >= 2) {
+                    fetchSuggestions(val);
+                } else {
+                    searchSuggestions?.classList.add('hidden');
+                }
+
                 // If on search page, mirror value and trigger search
                 if (window.location.pathname.toLowerCase() === '/search') {
                     const searchInput = document.getElementById('search-input');
@@ -338,6 +402,7 @@
             globalClear?.addEventListener('click', function() {
                 globalSearch.value = '';
                 globalClear.classList.add('hidden');
+                searchSuggestions?.classList.add('hidden');
                 globalSearch.focus();
                 
                 if (window.location.pathname.toLowerCase() === '/search') {
@@ -351,9 +416,24 @@
 
             globalSearch.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter' && this.value.trim()) {
+                    searchSuggestions?.classList.add('hidden');
                     if (window.location.pathname.toLowerCase() !== '/search') {
                         window.location.href = '/Search?q=' + encodeURIComponent(this.value.trim());
                     }
+                }
+            });
+            
+            // Hide suggestions when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.top-header__search')) {
+                    searchSuggestions?.classList.add('hidden');
+                }
+            });
+            
+            // Show suggestions again when focusing input
+            globalSearch.addEventListener('focus', function() {
+                if (this.value.trim().length >= 2 && searchSuggestions?.innerHTML.includes('search-suggestion-item')) {
+                    searchSuggestions.classList.remove('hidden');
                 }
             });
         }

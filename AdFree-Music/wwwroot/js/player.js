@@ -111,9 +111,16 @@
 
         // Apply audio quality streaming preferences
         const quality = localStorage.getItem('umusic_audio_quality') || 'auto';
+        
+        // Show loading spinner immediately
+        showLoadingState(true);
+        
         audio.src = `${song.streamUrl}?quality=${quality}`;
         audio.load();
-        audio.play().catch(err => console.error('[AdFreeMusic] Playback error:', err));
+        audio.play().catch(err => {
+            console.error('[UMusic] Playback error:', err);
+            showLoadingState(false);
+        });
 
         state.isPlaying = true;
         updatePlayerBarUI(song);
@@ -269,9 +276,9 @@
 
     audio.addEventListener('play', () => {
         state.isPlaying = true;
-        updatePlayButton(true);
-        if ('mediaSession' in navigator) {
-            navigator.mediaSession.playbackState = 'playing';
+        // Don't update icon if we are still buffering
+        if (audio.readyState >= 3) {
+            updatePlayButton(true);
         }
     });
 
@@ -281,6 +288,20 @@
         if ('mediaSession' in navigator) {
             navigator.mediaSession.playbackState = 'paused';
         }
+    });
+
+    audio.addEventListener('waiting', () => {
+        showLoadingState(true);
+    });
+
+    audio.addEventListener('playing', () => {
+        showLoadingState(false);
+        updatePlayButton(true);
+    });
+
+    audio.addEventListener('canplay', () => {
+        showLoadingState(false);
+        if (state.isPlaying) updatePlayButton(true);
     });
 
     audio.addEventListener('ended', () => {
@@ -327,6 +348,19 @@
         els.playIcon.innerHTML = playing
             ? `<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>`
             : `<polygon points="5,3 19,12 5,21"/>`;
+        els.playIcon.classList.remove('spin-anim');
+    }
+
+    function showLoadingState(isLoading) {
+        if (!els.playIcon) return;
+        if (isLoading) {
+            // Show a spinner SVG instead of play/pause
+            els.playIcon.innerHTML = `<path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/>`;
+            els.playIcon.classList.add('spin-anim');
+        } else {
+            els.playIcon.classList.remove('spin-anim');
+            updatePlayButton(state.isPlaying);
+        }
     }
 
     function highlightActiveSong(songId) {
@@ -737,7 +771,7 @@
         if (!npContainer || !nextContainer) return;
 
         // Render Now Playing
-        if (state.queue.length === 0 || state.currentIndex >= state.queue.length) {
+        if (state.queue.length === 0 || state.currentIndex >= state.queue.length || state.currentIndex < 0) {
             npContainer.innerHTML = `<p style="font-size:0.8rem; color:var(--text-muted);">Nothing playing</p>`;
             nextContainer.innerHTML = '';
             return;
@@ -933,6 +967,40 @@
                     els.queueBtn?.click();
                     break;
             }
+        });
+    }
+
+    // ─────────────────────────────────────────
+    // Full-Screen Player Expansion
+    // ─────────────────────────────────────────
+    const playerBar = document.getElementById('player-bar');
+    const playerTrackContainer = document.querySelector('.player-bar__track');
+    let playerCloseBtn = document.querySelector('.player-bar__close-btn');
+
+    // Create close button if it doesn't exist (e.g. cached HTML)
+    if (playerBar && !playerCloseBtn) {
+        playerCloseBtn = document.createElement('button');
+        playerCloseBtn.className = 'player-bar__close-btn';
+        playerCloseBtn.setAttribute('aria-label', 'Close full player');
+        playerCloseBtn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+        playerBar.insertBefore(playerCloseBtn, playerBar.firstChild);
+    }
+
+    if (playerTrackContainer && playerBar) {
+        playerTrackContainer.addEventListener('click', () => {
+            // Only expand if there's actually a song playing (currentIndex >= 0)
+            if (!playerBar.classList.contains('is-expanded') && state.currentIndex >= 0) {
+                playerBar.classList.add('is-expanded');
+                document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            }
+        });
+    }
+
+    if (playerCloseBtn && playerBar) {
+        playerCloseBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            playerBar.classList.remove('is-expanded');
+            document.body.style.overflow = ''; // Restore scrolling
         });
     }
 

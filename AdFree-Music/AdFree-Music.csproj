@@ -8,4 +8,8 @@
     <AssemblyName>AdFreeMusic</AssemblyName>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="YouTubeExplode" Version="6.5.3" />
+  </ItemGroup>
+
 </Project>

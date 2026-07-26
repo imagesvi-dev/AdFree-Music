@@ -156,6 +156,18 @@
   pointer-events: none;
 }
 
+.top-header__search-clear:hover {
+  color: var(--text-primary);
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+.spin-anim {
+  animation: spin 1s linear infinite;
+  transform-origin: center;
+}
+
 /* ============================================================
    Main Content Area
    ============================================================ */
@@ -439,6 +451,7 @@
   .main-content {
     margin-left: 0;
     width: 100%;
+    padding-bottom: calc(var(--player-height) + 56px + 24px);
   }
 
   .content-inner {
@@ -476,8 +489,26 @@
 }
 
 @media (max-width: 600px) {
+  .player-bar {
+    height: calc(var(--player-height) + 8px);
+    padding: 0 10px;
+    gap: 6px;
+  }
+  .mobile-nav {
+    bottom: calc(var(--player-height) + 8px);
+  }
+  .main-content {
+    padding-bottom: calc(var(--player-height) + 56px + 32px);
+  }
   .player-bar__time { display: none; }
-  .player-bar__track { width: 130px; }
+  .player-bar__track { width: auto; max-width: 60%; flex: 1; }
+  .player-bar__art { width: 44px; height: 44px; }
+  .player-bar__progress { position: absolute; top: 0; left: 0; right: 0; transform: translateY(-50%); width: 100%; max-width: 100%; }
+  .player-bar__controls { flex: 0; min-width: auto; align-items: flex-end; padding-right: 4px; }
+  .player-bar__buttons { gap: 12px; }
+  .ctrl-btn { width: 36px; height: 36px; }
+  .ctrl-btn--play { width: 42px; height: 42px; }
+  .ctrl-btn--prev, .ctrl-btn--next { width: 32px; height: 32px; }
 }
 
 /* ============================================================
@@ -580,6 +611,265 @@
 
 .top-header__search-clear:hover {
   color: var(--text-primary);
+}
+
+/* Search Suggestions Dropdown */
+.search-suggestions-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  max-height: 420px;
+  overflow-y: auto;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+.search-suggestions-dropdown.hidden {
+  display: none;
+}
+
+.search-suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.search-suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.search-suggestion-item:hover, .search-suggestion-item.is-active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.search-suggestion-art {
+  width: 42px;
+  height: 42px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.search-suggestion-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.search-suggestion-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-suggestion-artist {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.search-suggestion-msg {
+  padding: 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* ============================================================
+   Full-Screen Player Expansion (Responsive & Premium)
+   ============================================================ */
+.player-bar {
+  transition: height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.4s ease, padding 0.4s ease;
+}
+
+.player-bar.is-expanded {
+  height: 100vh;
+  height: 100dvh;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background: rgba(12, 12, 12, 0.98);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  box-shadow: none;
+  overflow-y: auto; /* Allow scrolling if screen is extremely short */
+}
+
+/* The close button positioned cleanly */
+.player-bar__close-btn {
+  display: none;
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  color: var(--text-primary);
+  border: none;
+  cursor: pointer;
+  z-index: 1000;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+}
+
+.player-bar__close-btn:hover {
+  background: rgba(255,255,255,0.2);
+  transform: scale(1.05);
+}
+
+.player-bar.is-expanded .player-bar__close-btn {
+  display: flex;
+}
+
+/* Hover hint for expanding */
+.player-bar:not(.is-expanded) .player-bar__track {
+  cursor: pointer;
+  transition: transform var(--transition-fast);
+}
+
+.player-bar:not(.is-expanded) .player-bar__track:hover {
+  transform: translateY(-2px);
+}
+
+.player-bar:not(.is-expanded) .player-bar__track:hover .player-bar__art::after {
+  content: '⤢';
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+/* Expanded track layout */
+.player-bar.is-expanded .player-bar__track {
+  flex-direction: column;
+  width: 100%;
+  max-width: 420px; /* Optimal reading width */
+  text-align: center;
+  margin-bottom: 32px;
+  gap: 16px;
+  cursor: default; /* No pointer when expanded */
+}
+
+/* Ensure the art doesn't push controls off-screen on short mobile devices */
+.player-bar.is-expanded .player-bar__art {
+  width: 100%;
+  max-width: 320px; /* Cap width on desktop */
+  max-height: 40vh; /* Crucial for small phones */
+  height: auto;
+  aspect-ratio: 1/1;
+  border-radius: var(--radius-xl);
+  box-shadow: 0 24px 48px rgba(0,0,0,0.4);
+  margin: 0 auto 16px auto;
+}
+
+/* Remove the hover icon when expanded */
+.player-bar.is-expanded .player-bar__art::after {
+  display: none !important;
+}
+
+.player-bar.is-expanded .player-bar__song-name {
+  font-size: 1.75rem;
+  font-weight: 700;
+  white-space: normal;
+  line-height: 1.3;
+}
+
+.player-bar.is-expanded .player-bar__artist-name {
+  font-size: 1.125rem;
+  margin-top: 4px;
+  opacity: 0.8;
+}
+
+/* Re-layout controls for expanded view */
+.player-bar.is-expanded .player-bar__controls {
+  width: 100%;
+  max-width: 420px;
+  padding: 0;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Progress bar needs to override mobile absolute positioning */
+.player-bar.is-expanded .player-bar__progress {
+  position: relative !important;
+  transform: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-bottom: 40px; /* Spacing before buttons */
+  top: auto !important;
+  left: auto !important;
+}
+
+/* Force time display on mobile */
+.player-bar.is-expanded .player-bar__time {
+  display: block !important;
+  font-size: 0.85rem;
+}
+
+/* Scale up the buttons nicely */
+.player-bar.is-expanded .player-bar__buttons {
+  gap: 32px;
+  justify-content: center;
+  transform: scale(1.3);
+  margin-bottom: 24px;
+}
+
+/* Reposition volume slider to fit naturally in flow */
+.player-bar.is-expanded .player-bar__volume {
+  display: flex !important; /* Force visible on mobile */
+  position: static !important;
+  width: 100%;
+  max-width: 300px;
+  justify-content: center;
+  margin-top: 32px;
+  transform: none;
+}
+
+/* Small adjustments for very small phones (like iPhone SE) */
+@media (max-width: 400px), (max-height: 700px) {
+  .player-bar.is-expanded {
+    padding: 24px 16px;
+  }
+  .player-bar__close-btn {
+    top: 16px;
+    left: 16px;
+    width: 36px;
+    height: 36px;
+  }
+  .player-bar.is-expanded .player-bar__buttons {
+    transform: scale(1.1);
+    gap: 24px;
+  }
+  .player-bar.is-expanded .player-bar__song-name {
+    font-size: 1.5rem;
+  }
+  .player-bar.is-expanded .player-bar__art {
+    max-height: 35vh;
+  }
 }
 
 @media (max-width: 900px) {

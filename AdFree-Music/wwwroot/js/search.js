@@ -57,7 +57,7 @@
                 if (!resp.ok) throw new Error(`HTTP ${resp.status} - Could not connect to music search service.`);
                 const data = await resp.json();
 
-                currentResults = data.songs || [];
+                currentResults = (data.songs || []).filter(s => s && typeof s === 'object');
                 window.setQueue?.(currentResults);
 
                 renderResults(currentResults, resultsEl, countEl, loadingEl);
