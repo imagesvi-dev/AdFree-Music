@@ -62,6 +62,22 @@
 
                 renderResults(currentResults, resultsEl, countEl, loadingEl);
 
+                // === NEW: Pre-warm yt-dlp cache for top results (instant future playback) ===
+                if (currentResults.length > 0) {
+                    const quality = localStorage.getItem('umusic_audio_quality') || 'high';
+                    const warmPayload = currentResults.slice(0, 6).map(s => ({
+                        artist: s.artist,
+                        title: s.name,
+                        quality: quality
+                    }));
+                    
+                    fetch('/api/warm-cache', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(warmPayload)
+                    }).catch(() => {}); // non-blocking
+                }
+
                 // Update URL without page reload for shareable links
                 const url = new URL(window.location);
                 url.searchParams.set('q', query.trim());

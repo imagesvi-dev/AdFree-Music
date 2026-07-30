@@ -13,6 +13,10 @@ public sealed class YtdlService
     private readonly string _exePath;
     private readonly string _toolsDir;
 
+    // Aggressive in-memory cache for resolved stream URLs (key = artist|title|quality)
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _streamCache 
+        = new System.Collections.Concurrent.ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
     public YtdlService(ILogger<YtdlService> logger)
     {
         _logger = logger;
@@ -86,13 +90,23 @@ public sealed class YtdlService
 
     /// <summary>
     /// Searches YouTube for the song and artist and returns the direct audio stream URL.
+    /// Uses aggressive in-memory caching + faster yt-dlp flags to eliminate 10-15s delay.
     /// </summary>
     public async Task<string> GetAudioStreamUrlAsync(string artist, string title, string quality = "high", CancellationToken ct = default)
     {
         await EnsureInstalledAsync(ct);
 
-        var cleanArtist = artist.Replace("\"", "");
-        var cleanTitle = title.Replace("\"", "");
+        var cleanArtist = artist.Replace("\"", "").Trim();
+        var cleanTitle = title.Replace("\"", "").Trim();
+        var cacheKey = $"{cleanArtist}|{cleanTitle}|{quality?.ToLower() ?? "high"}";
+
+        // 1. Return cached URL instantly if available
+        if (_streamCache.TryGetValue(cacheKey, out var cachedUrl) && !string.IsNullOrWhiteSpace(cachedUrl))
+        {
+            _logger.LogDebug("Cache hit for stream URL: {Artist} - {Title}", artist, title);
+            return cachedUrl;
+        }
+
         var searchQuery = $"ytsearch1:{cleanArtist} - {cleanTitle} audio";
 
         // Map audio quality request to yt-dlp format filter
@@ -114,33 +128,34 @@ public sealed class YtdlService
                 break;
         }
         
-        // Setup process start info
+        // 2. Faster yt-dlp flags: --no-playlist, --flat-playlist, --no-warnings, shorter timeout
         var startInfo = new ProcessStartInfo
         {
             FileName = _exePath,
-            Arguments = $"--skip-download --print urls --format \"{formatFilter}\" \"{searchQuery}\"",
+            Arguments = $"--no-playlist --flat-playlist --no-warnings --skip-download --print urls --format \"{formatFilter}\" \"{searchQuery}\"",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true
         };
 
-        _logger.LogInformation("Running yt-dlp to get stream URL for: {Artist} - {Title}", artist, title);
+        _logger.LogInformation("Running yt-dlp (cached) for: {Artist} - {Title}", artist, title);
 
         using var process = new Process { StartInfo = startInfo };
         try
         {
             process.Start();
             
-            // Read output and error streams
+            // Read output and error streams with aggressive timeout
             var outputTask = process.StandardOutput.ReadLineAsync(ct);
             var errorTask = process.StandardError.ReadToEndAsync(ct);
 
-            await Task.WhenAny(outputTask.AsTask(), Task.Delay(15000, ct)); // 15s timeout
+            // Much shorter timeout (4s) + cache miss handling
+            await Task.WhenAny(outputTask.AsTask(), Task.Delay(4000, ct)); 
 
             if (!process.HasExited)
             {
-                process.Kill();
+                try { process.Kill(); } catch { }
             }
 
             var streamUrl = await outputTask;
@@ -148,21 +163,44 @@ public sealed class YtdlService
 
             if (!string.IsNullOrWhiteSpace(error) && string.IsNullOrWhiteSpace(streamUrl))
             {
-                _logger.LogWarning("yt-dlp error output: {Error}", error);
+                _logger.LogWarning("yt-dlp error: {Error}", error);
             }
 
             if (!string.IsNullOrWhiteSpace(streamUrl))
             {
                 var cleanUrl = streamUrl.Trim();
-                _logger.LogInformation("Successfully resolved stream URL");
+                
+                // 3. Store in cache for future instant playback
+                _streamCache[cacheKey] = cleanUrl;
+                
+                _logger.LogInformation("Resolved + cached stream URL");
                 return cleanUrl;
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error executing yt-dlp for search query: {Query}", searchQuery);
+            _logger.LogError(ex, "yt-dlp error for query: {Query}", searchQuery);
         }
 
         return string.Empty;
+    }
+
+    /// <summary>
+    /// Pre-warms the cache for multiple songs in background (called after search).
+    /// </summary>
+    public void WarmCache(IEnumerable<(string artist, string title, string quality)> songs)
+    {
+        _ = Task.Run(async () =>
+        {
+            foreach (var (artist, title, quality) in songs.Take(8)) // Limit to top 8
+            {
+                try
+                {
+                    await GetAudioStreamUrlAsync(artist, title, quality ?? "high");
+                    await Task.Delay(120); // Gentle rate limit
+                }
+                catch { /* ignore background errors */ }
+            }
+        });
     }
 }

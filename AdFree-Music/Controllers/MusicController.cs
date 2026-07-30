@@ -65,6 +65,25 @@ public sealed class MusicController : ControllerBase
         return Ok(new { songs = songs.Select(MapSong) });
     }
 
+    /// <summary>
+    /// Background pre-warm endpoint for yt-dlp cache (called from JS after search results load)
+    /// </summary>
+    [HttpPost("warm-cache")]
+    public IActionResult WarmCache([FromBody] List<WarmCacheRequest> songs)
+    {
+        if (songs == null || songs.Count == 0) return Ok();
+
+        var items = songs
+            .Where(s => !string.IsNullOrWhiteSpace(s.artist) && !string.IsNullOrWhiteSpace(s.title))
+            .Select(s => (s.artist, s.title, s.quality ?? "high"))
+            .ToList();
+
+        _ytdlService.WarmCache(items);
+        return Ok(new { warmed = items.Count });
+    }
+
+    public record WarmCacheRequest(string artist, string title, string? quality);
+
     [HttpGet("albums/featured")]
     public async Task<IActionResult> FeaturedAlbums(CancellationToken ct)
     {

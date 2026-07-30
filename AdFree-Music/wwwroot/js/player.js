@@ -13,6 +13,9 @@
     const audio = new Audio();
     audio.preload = 'auto';
     audio.crossOrigin = 'anonymous';
+    
+    // Additional performance tuning
+    audio.volume = 0.85; // default volume
 
     // Global state object
     window.UMusic = window.UMusic || {
@@ -110,24 +113,63 @@
         }
 
         // Apply audio quality streaming preferences
-        const quality = localStorage.getItem('umusic_audio_quality') || 'auto';
+        const quality = localStorage.getItem('umusic_audio_quality') || 'high';
         
         // Show loading spinner immediately
         showLoadingState(true);
         
+        // Use preload="auto" + direct src assignment for fastest playback
+        audio.preload = 'auto';
         audio.src = `${song.streamUrl}?quality=${quality}`;
-        audio.load();
-        audio.play().catch(err => {
-            console.error('[UMusic] Playback error:', err);
-            showLoadingState(false);
-        });
+        
+        // Start playing as soon as possible (no extra load() needed)
+        const playPromise = audio.play();
+        if (playPromise) {
+            playPromise.catch(err => {
+                console.error('[UMusic] Playback error:', err);
+                showLoadingState(false);
+            });
+        }
 
         state.isPlaying = true;
         updatePlayerBarUI(song);
         updateMediaSession(song);
         highlightActiveSong(song.id);
         renderQueueDrawer();
+
+        // === NEW: Prefetch next track immediately (eliminates future delay) ===
+        prefetchNextTrack();
     };
+
+    // Prefetch next track's stream URL in background
+    function prefetchNextTrack() {
+        if (!state.queue.length) return;
+        
+        const nextIndex = (state.currentIndex + 1) % state.queue.length;
+        const nextSong = state.queue[nextIndex];
+        
+        if (!nextSong || !nextSong.streamUrl) return;
+        
+        // Fire and forget prefetch
+        const quality = localStorage.getItem('umusic_audio_quality') || 'high';
+        fetch(`${nextSong.streamUrl}?quality=${quality}`, { 
+            method: 'HEAD',
+            cache: 'force-cache' 
+        }).catch(() => {});
+        
+        // Also warm the yt-dlp cache on server for next song
+        if (nextSong.artist && nextSong.name) {
+            fetch('/api/warm-cache', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify([{
+                    artist: nextSong.artist,
+                    title: nextSong.name,
+                    quality: quality
+                }])
+            }).catch(() => {});
+        }
+    }
 
     window.setQueue = function setQueue(songs) {
         state.queue = songs;
@@ -302,6 +344,13 @@
     audio.addEventListener('canplay', () => {
         showLoadingState(false);
         if (state.isPlaying) updatePlayButton(true);
+    });
+
+    // Extra: start playing as soon as we have enough data
+    audio.addEventListener('canplaythrough', () => {
+        if (state.isPlaying && audio.paused) {
+            audio.play().catch(() => {});
+        }
     });
 
     audio.addEventListener('ended', () => {
