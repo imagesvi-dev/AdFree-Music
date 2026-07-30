@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AdFree Music • 3-Dot Menu Demo</title>
+<style>
+:root {
+    --accent: #ff2d55;
+    --bg: #0f0f0f;
+    --card: #1a1a1a;
+    --text: #fff;
+    --text-secondary: #a1a1aa;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 20px;
+    max-width: 480px;
+    margin: 0 auto;
+}
+h1 { font-size: 22px; margin-bottom: 24px; }
+.song-list {
+    background: var(--card);
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #333;
+}
+.song-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid #333;
+    cursor: pointer;
+}
+.song-item:last-child { border-bottom: none; }
+.song-item:hover { background: #222; }
+.song-art {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    margin-right: 14px;
+    object-fit: cover;
+}
+.song-info { flex: 1; }
+.song-name { font-weight: 600; font-size: 15px; }
+.song-artist { font-size: 13px; color: var(--text-secondary); }
+.song-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.options-btn {
+    width: 32px;
+    height: 32px;
+    background: #222;
+    border: none;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.options-btn:active { background: #333; }
+
+/* === Options Menu === */
+#options-menu {
+    position: fixed;
+    background: #1f1f1f;
+    border: 1px solid #333;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    padding: 6px 0;
+    min-width: 200px;
+    z-index: 99999;
+    display: none;
+}
+#options-menu button {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    color: #fff;
+    padding: 12px 20px;
+    text-align: left;
+    font-size: 15px;
+    cursor: pointer;
+}
+#options-menu button:hover {
+    background: #292929;
+}
+#options-menu button:active {
+    background: #333;
+}
+
+/* Player Bar */
+#player-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #111;
+    border-top: 1px solid #333;
+    padding: 14px 16px;
+    display: none;
+    align-items: center;
+    gap: 14px;
+    max-width: 480px;
+    margin: 0 auto;
+}
+.player-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+.player-art {
+    width: 46px;
+    height: 46px;
+    border-radius: 8px;
+}
+.player-info {
+    flex: 1;
+    min-width: 0;
+}
+.player-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player-artist { font-size: 12px; color: #888; }
+.controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.control-btn {
+    width: 36px;
+    height: 36px;
+    background: #222;
+    border: none;
+    color: white;
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+}
+.play-btn {
+    background: var(--accent);
+    width: 42px;
+    height: 42px;
+}
+
+/* Toast */
+#toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #222;
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-size: 13px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    display: none;
+    z-index: 999999;
+}
+</style>
+</head>
+<body>
+
+<h1>🎵 AdFree Music</h1>
+<p style="color:#666; margin-bottom:20px; font-size:14px;">3-Dot Menu Demo (Production Ready)</p>
+
+<div class="song-list" id="song-list">
+    <!-- Songs populated by JS -->
+</div>
+
+<!-- Options Menu -->
+<div id="options-menu"></div>
+
+<!-- Player Bar -->
+<div id="player-bar">
+    <div class="player-left">
+        <img id="player-art" class="player-art" src="">
+        <div class="player-info">
+            <div id="player-name" class="player-name"></div>
+            <div id="player-artist" class="player-artist"></div>
+        </div>
+    </div>
+    <div class="controls">
+        <button onclick="prevTrack()" class="control-btn">⏮</button>
+        <button onclick="togglePlay()" id="play-btn" class="control-btn play-btn">▶</button>
+        <button onclick="nextTrack()" class="control-btn">⏭</button>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<audio id="audio-player"></audio>
+
+<script>
+// ==================== DATA ====================
+const songs = [
+    { 
+        id: "1", 
+        name: "Tum Hi Ho", 
+        artist: "Arijit Singh", 
+        album: "Aashiqui 2",
+        image: "https://picsum.photos/id/1011/48/48",
+        url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+    },
+    { 
+        id: "2", 
+        name: "Kesariya", 
+        artist: "Arijit Singh", 
+        album: "Brahmastra",
+        image: "https://picsum.photos/id/1005/48/48",
+        url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
+    },
+    { 
+        id: "3", 
+        name: "Blinding Lights", 
+        artist: "The Weeknd", 
+        album: "After Hours",
+        image: "https://picsum.photos/id/160/48/48",
+        url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
+    },
+    { 
+        id: "4", 
+        name: "Levitating", 
+        artist: "Dua Lipa", 
+        album: "Future Nostalgia",
+        image: "https://picsum.photos/id/201/48/48",
+        url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3"
+    }
+];
+
+let queue = [];
+let currentIndex = -1;
+let isPlaying = false;
+
+// Audio element
+const audio = document.getElementById('audio-player');
+
+// ==================== RENDER SONGS ====================
+function renderSongs() {
+    const container = document.getElementById('song-list');
+    container.innerHTML = '';
+
+    songs.forEach(song => {
+        const item = document.createElement('div');
+        item.className = 'song-item';
+        
+        item.innerHTML = `
+            <img src="${song.image}" class="song-art">
+            <div class="song-info">
+                <div class="song-name">${song.name}</div>
+                <div class="song-artist">${song.artist}</div>
+            </div>
+            <div class="song-actions">
+                <button class="options-btn" data-id="${song.id}">⋮</button>
+            </div>
+        `;
+        
+        // Click on song = play
+        item.addEventListener('click', (e) => {
+            if (e.target.classList.contains('options-btn')) return;
+            playTrack(song);
+        });
+        
+        // Options button
+        const optionsBtn = item.querySelector('.options-btn');
+        optionsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showOptionsMenu(e, song, item);
+        });
+        
+        container.appendChild(item);
+    });
+}
+
+// ==================== OPTIONS MENU ====================
+let currentSong = null;
+let menuElement = null;
+
+function showOptionsMenu(e, song, element) {
+    currentSong = song;
+    
+    // Remove existing menu
+    const existing = document.getElementById('options-menu');
+    if (existing) existing.style.display = 'none';
+    
+    // Create menu
+    const menu = document.createElement('div');
+    menu.id = 'options-menu';
+    menu.style.display = 'block';
+    
+    menu.innerHTML = `
+        <button data-action="play">▶ Play Now</button>
+        <button data-action="playnext">⏭ Play Next</button>
+        <button data-action="addqueue">➕ Add to Queue</button>
+        <button data-action="playlist">📁 Add to Playlist</button>
+        <button data-action="download">⬇ Download Offline</button>
+        <button data-action="album">💿 View Album</button>
+        <button data-action="artist">👤 View Artist</button>
+        <button data-action="share">🔗 Share</button>
+        <button data-action="info">ℹ️ Song Info</button>
+    `;
+    
+    // Position menu
+    const rect = e.currentTarget.getBoundingClientRect();
+    menu.style.top = `${rect.bottom + window.scrollY + 8}px`;
+    menu.style.left = `${rect.left + window.scrollX - 120}px`;
+    
+    // Add click handlers
+    menu.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            handleMenuAction(btn.dataset.action, song);
+            menu.style.display = 'none';
+        });
+    });
+    
+    // Close on outside click
+    setTimeout(() => {
+        document.addEventListener('click', function closeMenu(ev) {
+            if (!menu.contains(ev.target)) {
+                menu.style.display = 'none';
+                document.removeEventListener('click', closeMenu);
+            }
+        }, { once: true });
+    }, 50);
+    
+    document.body.appendChild(menu);
+    menuElement = menu;
+}
+
+// ==================== MENU ACTIONS ====================
+function handleMenuAction(action, song) {
+    const toast = document.getElementById('toast');
+    
+    switch(action) {
+        case 'play':
+            playTrack(song);
+            showToast('Playing now');
+            break;
+            
+        case 'playnext':
+            if (queue.length === 0) {
+                playTrack(song);
+            } else {
+                queue.splice(currentIndex + 1, 0, song);
+                showToast('Added to play next');
+            }
+            break;
+            
+        case 'addqueue':
+            if (queue.length === 0) {
+                playTrack(song);
+            } else {
+                queue.push(song);
+                showToast('Added to queue');
+            }
+            break;
+            
+        case 'playlist':
+            showToast('Added to "Favorites" playlist');
+            break;
+            
+        case 'download':
+            showToast('Downloading offline...');
+            setTimeout(() => {
+                showToast('Download complete!');
+            }, 1500);
+            break;
+            
+        case 'album':
+            showToast(`Opening ${song.album}`);
+            break;
+            
+        case 'artist':
+            showToast(`Opening ${song.artist}`);
+            break;
+            
+        case 'share':
+            navigator.clipboard.writeText(`https://adfreemusic.app/song/${song.id}`).then(() => {
+                showToast('Link copied to clipboard');
+            }).catch(() => {
+                showToast('Link: https://adfreemusic.app/song/' + song.id);
+            });
+            break;
+            
+        case 'info':
+            alert(`Song Info:\n\nTitle: ${song.name}\nArtist: ${song.artist}\nAlbum: ${song.album}`);
+            break;
+    }
+}
+
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.style.display = 'block';
+    
+    setTimeout(() => {
+        toast.style.display = 'none';
+    }, 2200);
+}
+
+// ==================== PLAYBACK ====================
+function playTrack(song) {
+    const playerBar = document.getElementById('player-bar');
+    playerBar.style.display = 'flex';
+    
+    // Update UI
+    document.getElementById('player-art').src = song.image;
+    document.getElementById('player-name').textContent = song.name;
+    document.getElementById('player-artist').textContent = song.artist;
+    
+    // Set queue
+    queue = [...songs];
+    currentIndex = queue.findIndex(s => s.id === song.id);
+    
+    // Play audio
+    audio.src = song.url;
+    audio.play().catch(() => {});
+    
+    isPlaying = true;
+    updatePlayButton();
+}
+
+function togglePlay() {
+    if (!audio.src) return;
+    
+    if (isPlaying) {
+        audio.pause();
+    } else {
+        audio.play();
+    }
+    isPlaying = !isPlaying;
+    updatePlayButton();
+}
+
+function updatePlayButton() {
+    const btn = document.getElementById('play-btn');
+    btn.innerHTML = isPlaying ? '⏸' : '▶';
+}
+
+function nextTrack() {
+    if (queue.length === 0) return;
+    
+    currentIndex = (currentIndex + 1) % queue.length;
+    const nextSong = queue[currentIndex];
+    
+    document.getElementById('player-art').src = nextSong.image;
+    document.getElementById('player-name').textContent = nextSong.name;
+    document.getElementById('player-artist').textContent = nextSong.artist;
+    
+    audio.src = nextSong.url;
+    audio.play().catch(() => {});
+    isPlaying = true;
+    updatePlayButton();
+}
+
+function prevTrack() {
+    if (queue.length === 0) return;
+    
+    currentIndex = (currentIndex - 1 + queue.length) % queue.length;
+    const prevSong = queue[currentIndex];
+    
+    document.getElementById('player-art').src = prevSong.image;
+    document.getElementById('player-name').textContent = prevSong.name;
+    document.getElementById('player-artist').textContent = prevSong.artist;
+    
+    audio.src = prevSong.url;
+    audio.play().catch(() => {});
+    isPlaying = true;
+    updatePlayButton();
+}
+
+// ==================== AUDIO EVENTS ====================
+audio.addEventListener('ended', () => {
+    nextTrack();
+});
+
+audio.addEventListener('play', () => {
+    isPlaying = true;
+    updatePlayButton();
+});
+
+audio.addEventListener('pause', () => {
+    isPlaying = false;
+    updatePlayButton();
+});
+
+// ==================== INIT ====================
+window.onload = function() {
+    renderSongs();
+    
+    // Auto show first song hint
+    setTimeout(() => {
+        const firstSong = document.querySelector('.song-item');
+        if (firstSong) {
+            firstSong.style.boxShadow = '0 0 0 2px #ff2d55';
+            setTimeout(() => {
+                if (firstSong) firstSong.style.boxShadow = '';
+            }, 1800);
+        }
+    }, 1200);
+    
+    console.log('%c[Demo] 3-Dot Menu ready. Click ⋮ on any song.', 'color:#666');
+};
+</script>
+</body>
+</html>
+```

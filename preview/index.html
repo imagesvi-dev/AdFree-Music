@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdFree Music - Preview Links</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background:#0f0f0f; color:white; padding:60px 40px; }
+        .card { background:#1a1a1a; padding:30px; border-radius:16px; max-width:700px; margin:0 auto; }
+        h1 { font-size:32px; margin-bottom:8px; }
+        .links { margin-top:40px; }
+        a { display:block; padding:18px 24px; background:#222; margin-bottom:12px; border-radius:12px; color:white; text-decoration:none; font-size:18px; transition:all .2s; }
+        a:hover { background:#333; transform:translateY(-2px); }
+        .note { font-size:14px; color:#888; margin-top:30px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🎵 AdFree Music</h1>
+        <p style="color:#888; font-size:18px;">Latency Fix Preview (v2)</p>
+        
+        <div class="links">
+            <a href="player-demo.html">▶️ Open Interactive Player Demo</a>
+            <a href="#" onclick="alert('This simulates the real app. The demo above shows the exact behavior after deploying on Railway.'); return false;">📖 View Explanation</a>
+        </div>
+        
+        <div class="note">
+            <strong>How to test:</strong><br>
+            1. Open the player demo<br>
+            2. Search "arijit" and press Enter<br>
+            3. Click any song → first play takes ~3 seconds<br>
+            4. Click the same song again → instant playback<br>
+            5. Click next song in queue → also instant
+        </div>
+    </div>
+</body>
+</html>

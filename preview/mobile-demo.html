@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AdFree Music - Preview</title>
+<style>
+body { font-family: system-ui, -apple-system, sans-serif; background:#0f0f0f; color:white; margin:0; padding:16px; }
+h1 { font-size:22px; margin:0 0 20px 0; }
+.song { background:#1a1a1a; padding:14px 16px; margin-bottom:8px; border-radius:12px; display:flex; align-items:center; gap:12px; }
+.song:active { background:#222; }
+.art { width:48px; height:48px; border-radius:8px; background:#333; }
+.info { flex:1; }
+.name { font-weight:600; }
+.artist { font-size:13px; color:#888; }
+.player { position:fixed; bottom:0; left:0; right:0; background:#111; padding:14px 16px; border-top:1px solid #333; display:none; }
+.status { font-size:12px; padding:2px 8px; border-radius:20px; background:#222; display:inline-block; margin-top:4px; }
+.cache { background:#22c55e; color:white; padding:1px 6px; border-radius:4px; font-size:11px; }
+</style>
+</head>
+<body>
+<h1>🎵 AdFree Music <span style="font-size:12px;color:#22c55e;">(Latency Fix)</span></h1>
+
+<div id="songs"></div>
+
+<div class="player" id="player">
+  <div style="display:flex; align-items:center; gap:12px;">
+    <div id="p-art" style="width:42px;height:42px;border-radius:8px;background:#333;"></div>
+    <div style="flex:1;">
+      <div id="p-name" style="font-weight:600;"></div>
+      <div id="p-artist" style="font-size:13px;color:#888;"></div>
+      <div id="status" class="status">Playing</div>
+    </div>
+    <button onclick="nextSong()" style="background:#ff2d55;color:white;border:none;padding:8px 14px;border-radius:999px;font-size:13px;">Next →</button>
+  </div>
+</div>
+
+<script>
+const data = [
+  {id:1, name:"Tum Hi Ho", artist:"Arijit Singh", img:"https://picsum.photos/id/1011/48/48"},
+  {id:2, name:"Kesariya", artist:"Arijit Singh", img:"https://picsum.photos/id/1005/48/48"},
+  {id:3, name:"Blinding Lights", artist:"The Weeknd", img:"https://picsum.photos/id/160/48/48"},
+  {id:4, name:"Levitating", artist:"Dua Lipa", img:"https://picsum.photos/id/201/48/48"}
+];
+
+let cache = new Map();
+let current = -1;
+let queue = [];
+
+function renderSongs() {
+  const container = document.getElementById('songs');
+  container.innerHTML = '';
+  
+  data.forEach(song => {
+    const el = document.createElement('div');
+    el.className = 'song';
+    el.innerHTML = `
+      <img src="${song.img}" class="art">
+      <div class="info">
+        <div class="name">${song.name}</div>
+        <div class="artist">${song.artist}</div>
+      </div>
+    `;
+    el.onclick = () => play(song);
+    container.appendChild(el);
+  });
+}
+
+function play(song) {
+  queue = [...data];
+  current = queue.findIndex(s => s.id === song.id);
+  
+  const player = document.getElementById('player');
+  player.style.display = 'block';
+  
+  document.getElementById('p-name').textContent = song.name;
+  document.getElementById('p-artist').textContent = song.artist;
+  document.getElementById('p-art').style.backgroundImage = `url(${song.img})`;
+  document.getElementById('p-art').style.backgroundSize = 'cover';
+  
+  const key = song.artist + '|' + song.name;
+  const status = document.getElementById('status');
+  
+  if (cache.has(key)) {
+    status.innerHTML = 'Playing <span class="cache">INSTANT</span>';
+    status.style.background = '#22c55e';
+  } else {
+    status.innerHTML = 'Resolving...';
+    status.style.background = '#f59e0b';
+    
+    setTimeout(() => {
+      cache.set(key, true);
+      status.innerHTML = 'Playing <span class="cache">CACHED</span>';
+      status.style.background = '#22c55e';
+    }, 2800);
+  }
+}
+
+function nextSong() {
+  if (current < queue.length - 1) current++;
+  else current = 0;
+  
+  const song = queue[current];
+  document.getElementById('p-name').textContent = song.name;
+  document.getElementById('p-artist').textContent = song.artist;
+  document.getElementById('p-art').style.backgroundImage = `url(${song.img})`;
+  
+  const key = song.artist + '|' + song.name;
+  const status = document.getElementById('status');
+  
+  if (cache.has(key)) {
+    status.innerHTML = 'Playing <span class="cache">INSTANT</span>';
+    status.style.background = '#22c55e';
+  } else {
+    status.innerHTML = 'Resolving...';
+    status.style.background = '#f59e0b';
+    setTimeout(() => {
+      cache.set(key, true);
+      status.innerHTML = 'Playing <span class="cache">CACHED</span>';
+      status.style.background = '#22c55e';
+    }, 2500);
+  }
+}
+
+window.onload = renderSongs;
+</script>
+</body>
+</html>

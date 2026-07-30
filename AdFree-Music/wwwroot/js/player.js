@@ -644,6 +644,9 @@
                     showToastNotification('Added to queue');
                 }
                 
+            } else if (action === 'createplaylist') {
+                createNewPlaylist(activeSongMetadata);
+                
             } else if (action === 'playlist') {
                 showPlaylistSelector(activeSongMetadata);
                 
@@ -803,6 +806,34 @@
                 alert('Download failed. Please check network connection.');
             }
         }
+    }
+
+    // ─────────────────────────────────────────
+    // Create New Playlist
+    // ─────────────────────────────────────────
+    function createNewPlaylist(song) {
+        const playlistName = prompt('Enter new playlist name:', 'My New Playlist');
+        
+        if (!playlistName || playlistName.trim() === '') return;
+
+        let playlists = [];
+        try {
+            playlists = JSON.parse(localStorage.getItem('umusic_playlists') || '[]');
+        } catch (e) {
+            playlists = [];
+        }
+
+        const newPlaylist = {
+            id: 'pl_' + Date.now(),
+            name: playlistName.trim(),
+            created: new Date().toISOString(),
+            songs: [song]
+        };
+
+        playlists.push(newPlaylist);
+        localStorage.setItem('umusic_playlists', JSON.stringify(playlists));
+
+        showToastNotification(`Playlist "${playlistName}" created with 1 song`);
     }
 
     // ─────────────────────────────────────────

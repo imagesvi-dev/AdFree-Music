@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdFree Music — Latency Fix Preview</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+        
+        :root {
+            --bg: #0f0f0f;
+            --card: #1a1a1a;
+            --accent: #ff2d55;
+            --text: #ffffff;
+            --text-secondary: #a1a1aa;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 40px 20px;
+            line-height: 1.5;
+        }
+        
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 40px;
+        }
+        
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+        
+        .badge {
+            background: #22c55e;
+            color: white;
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .search-box {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card);
+            border: 1px solid #333;
+            border-radius: 9999px;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .search-box input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: white;
+            font-size: 16px;
+        }
+        
+        .song-list {
+            background: var(--card);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+        
+        .song-item {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .song-item:hover {
+            background: #222;
+        }
+        
+        .song-item:last-child {
+            border-bottom: none;
+        }
+        
+        .song-art {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            object-fit: cover;
+            margin-right: 16px;
+        }
+        
+        .song-info {
+            flex: 1;
+        }
+        
+        .song-name {
+            font-weight: 600;
+            font-size: 15px;
+        }
+        
+        .song-artist {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+        
+        .song-duration {
+            color: var(--text-secondary);
+            font-size: 13px;
+            min-width: 50px;
+            text-align: right;
+        }
+        
+        .player-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #111;
+            border-top: 1px solid #333;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            z-index: 1000;
+        }
+        
+        .player-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            min-width: 260px;
+        }
+        
+        .player-art {
+            width: 56px;
+            height: 56px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+        
+        .player-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .control-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #222;
+            border: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .control-btn:hover {
+            background: #333;
+        }
+        
+        .play-btn {
+            width: 52px;
+            height: 52px;
+            background: var(--accent);
+            color: white;
+        }
+        
+        .progress-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .progress-bar {
+            flex: 1;
+            height: 4px;
+            background: #333;
+            border-radius: 9999px;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 9999px;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+        
+        .time {
+            font-size: 12px;
+            color: var(--text-secondary);
+            min-width: 45px;
+        }
+        
+        .status {
+            font-size: 13px;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            background: #222;
+            color: #22c55e;
+            font-weight: 500;
+        }
+        
+        .cache-hit {
+            background: #22c55e;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .demo-note {
+            background: #1f2937;
+            border: 1px solid #374151;
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .demo-note strong {
+            color: #22c55e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div>
+                <div class="logo">AdFree Music</div>
+                <div style="color: #666; font-size: 14px;">Latency Fix Preview • v2.0</div>
+            </div>
+            <div class="badge">NEW: Instant Playback</div>
+        </div>
+
+        <div class="demo-note">
+            <strong>✅ Preview Mode:</strong> This simulates the new caching system. 
+            First play = 3-4s delay (yt-dlp simulation).<br>
+            <strong>Second play &amp; queue navigation = Instant</strong> (cache hit).
+        </div>
+
+        <!-- Search Section -->
+        <div class="section">
+            <div class="section-title">
+                🔍 Search Results
+                <span style="font-size:12px; color:#666; font-weight:400;">(Click any song to play)</span>
+            </div>
+            
+            <div class="search-box">
+                <span>🔎</span>
+                <input type="text" id="search-input" placeholder="Search songs..." value="arijit singh" onkeyup="if (event.key === 'Enter') performSearch()">
+            </div>
+            
+            <div id="search-results" class="song-list">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- Queue Section -->
+        <div class="section">
+            <div class="section-title">📋 Queue</div>
+            <div id="queue-list" class="song-list" style="max-height: 220px; overflow-y: auto;">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Player Bar -->
+    <div class="player-bar" id="player-bar" style="display: none;">
+        <div class="player-left">
+            <img id="player-art" class="player-art" src="https://picsum.photos/id/1011/56/56" alt="Album Art">
+            <div>
+                <div id="player-name" style="font-weight:600; font-size:15px;"></div>
+                <div id="player-artist" style="color:#a1a1aa; font-size:13px;"></div>
+            </div>
+        </div>
+
+        <div class="player-controls">
+            <button onclick="prevTrack()" class="control-btn">⏮</button>
+            <button onclick="togglePlay()" id="play-btn" class="control-btn play-btn">▶</button>
+            <button onclick="nextTrack()" class="control-btn">⏭</button>
+        </div>
+
+        <div class="progress-container">
+            <div class="time" id="time-elapsed">0:00</div>
+            <div class="progress-bar" id="progress-bar" onclick="seekTo(event)">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <div class="time" id="time-total">3:22</div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:12px; min-width:140px;">
+            <div id="playback-status" class="status">Playing</div>
+            <div id="cache-status"></div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data (simulating backend results)
+        let songs = [
+            { id: "1", name: "Tum Hi Ho", artist: "Arijit Singh", duration: "3:22", image: "https://picsum.photos/id/1011/48/48" },
+            { id: "2", name: "Kesariya", artist: "Arijit Singh", duration: "4:15", image: "https://picsum.photos/id/1005/48/48" },
+            { id: "3", name: "Channa Mereya", artist: "Arijit Singh", duration: "4:49", image: "https://picsum.photos/id/106/48/48" },
+            { id: "4", name: "Blinding Lights", artist: "The Weeknd", duration: "3:20", image: "https://picsum.photos/id/160/48/48" },
+            { id: "5", name: "Levitating", artist: "Dua Lipa", duration: "3:23", image: "https://picsum.photos/id/201/48/48" },
+            { id: "6", name: "Excuses", artist: "AP Dhillon", duration: "2:56", image: "https://picsum.photos/id/251/48/48" }
+        ];
+
+        let queue = [];
+        let currentIndex = -1;
+        let isPlaying = false;
+        let audioSim = null;
+        let progressInterval = null;
+
+        // In-memory cache simulation (the key fix!)
+        let streamCache = new Map();
+
+        function performSearch() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const container = document.getElementById('search-results');
+            
+            const filtered = songs.filter(s => 
+                s.name.toLowerCase().includes(query) || 
+                s.artist.toLowerCase().includes(query)
+            );
+
+            container.innerHTML = '';
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div style="padding:20px; text-align:center; color:#666;">No results found</div>`;
+                return;
+            }
+
+            filtered.forEach(song => {
+                const item = document.createElement('div');
+                item.className = 'song-item';
+                item.innerHTML = `
+                    <img src="${song.image}" class="song-art">
+                    <div class="song-info">
+                        <div class="song-name">${song.name}</div>
+                        <div class="song-artist">${song.artist}</div>
+                    </div>
+                    <div class="song-duration">${song.duration}</div>
+                `;
+                
+                item.onclick = () => playSong(song, filtered);
+                container.appendChild(item);
+            });
+        }
+
+        function playSong(song, songList) {
+            // Set queue
+            queue = [...songList];
+            currentIndex = queue.findIndex(s => s.id === song.id);
+
+            const playerBar = document.getElementById('player-bar');
+            playerBar.style.display = 'flex';
+
+            // Update UI
+            updatePlayerUI(song);
+
+            // === THE MAGIC: Check cache ===
+            const cacheKey = `${song.artist}|${song.name}`;
+            const isCached = streamCache.has(cacheKey);
+
+            const statusEl = document.getElementById('cache-status');
+            
+            if (isCached) {
+                // INSTANT PLAYBACK (cache hit)
+                statusEl.innerHTML = `<span class="cache-hit">⚡ INSTANT</span>`;
+                startPlayback(song, true);
+            } else {
+                // First time - simulate yt-dlp delay (3-4 seconds)
+                statusEl.innerHTML = `<span style="color:#f59e0b; font-size:12px;">⏳ Resolving...</span>`;
+                setTimeout(() => {
+                    // Simulate successful resolution + cache it
+                    streamCache.set(cacheKey, "https://fake-stream-url.com/audio.m4a");
+                    statusEl.innerHTML = `<span class="cache-hit">⚡ CACHED</span>`;
+                    startPlayback(song, false);
+                }, 3200); // 3.2 second simulation
+            }
+        }
+
+        function updatePlayerUI(song) {
+            document.getElementById('player-art').src = song.image;
+            document.getElementById('player-name').textContent = song.name;
+            document.getElementById('player-artist').textContent = song.artist;
+            document.getElementById('time-total').textContent = song.duration;
+            
+            // Update queue display
+            renderQueue();
+        }
+
+        function startPlayback(song, instant) {
+            const statusEl = document.getElementById('playback-status');
+            const playBtn = document.getElementById('play-btn');
+            
+            isPlaying = true;
+            statusEl.textContent = instant ? 'Playing (Cached)' : 'Playing';
+            statusEl.style.color = '#22c55e';
+            playBtn.innerHTML = '⏸';
+
+            // Simulate progress
+            if (progressInterval) clearInterval(progressInterval);
+            
+            let progress = 0;
+            const totalSeconds = 200; // ~3:20
+            
+            progressInterval = setInterval(() => {
+                progress += 1;
+                const percent = (progress / totalSeconds) * 100;
+                
+                document.getElementById('progress-fill').style.width = `${Math.min(percent, 100)}%`;
+                
+                const mins = Math.floor(progress / 60);
+                const secs = progress % 60;
+                document.getElementById('time-elapsed').textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+                
+                if (progress >= totalSeconds) {
+                    clearInterval(progressInterval);
+                    nextTrack();
+                }
+            }, 250); // Fast simulation
+        }
+
+        function togglePlay() {
+            const playBtn = document.getElementById('play-btn');
+            const statusEl = document.getElementById('playback-status');
+            
+            isPlaying = !isPlaying;
+            
+            if (isPlaying) {
+                playBtn.innerHTML = '⏸';
+                statusEl.textContent = 'Playing';
+                if (!progressInterval) {
+                    // resume simulation
+                    const currentSong = queue[currentIndex];
+                    startPlayback(currentSong, true);
+                }
+            } else {
+                playBtn.innerHTML = '▶';
+                statusEl.textContent = 'Paused';
+                if (progressInterval) {
+                    clearInterval(progressInterval);
+                    progressInterval = null;
+                }
+            }
+        }
+
+        function nextTrack() {
+            if (currentIndex < queue.length - 1) {
+                currentIndex++;
+            } else {
+                currentIndex = 0;
+            }
+            const nextSong = queue[currentIndex];
+            updatePlayerUI(nextSong);
+            
+            const cacheKey = `${nextSong.artist}|${nextSong.name}`;
+            const isCached = streamCache.has(cacheKey);
+            
+            if (isCached) {
+                document.getElementById('cache-status').innerHTML = `<span class="cache-hit">⚡ INSTANT</span>`;
+                startPlayback(nextSong, true);
+            } else {
+                document.getElementById('cache-status').innerHTML = `<span style="color:#f59e0b">⏳ Resolving...</span>`;
+                setTimeout(() => {
+                    streamCache.set(cacheKey, "cached");
+                    document.getElementById('cache-status').innerHTML = `<span class="cache-hit">⚡ CACHED</span>`;
+                    startPlayback(nextSong, false);
+                }, 2800);
+            }
+        }
+
+        function prevTrack() {
+            if (currentIndex > 0) currentIndex--;
+            const prevSong = queue[currentIndex];
+            updatePlayerUI(prevSong);
+            startPlayback(prevSong, true);
+        }
+
+        function seekTo(e) {
+            const bar = document.getElementById('progress-bar');
+            const rect = bar.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            document.getElementById('progress-fill').style.width = `${percent * 100}%`;
+        }
+
+        function renderQueue() {
+            const container = document.getElementById('queue-list');
+            container.innerHTML = '';
+            
+            if (queue.length === 0) {
+                container.innerHTML = `<div style="padding:16px; color:#666; text-align:center;">Queue is empty</div>`;
+                return;
+            }
+            
+            queue.forEach((song, index) => {
+                const item = document.createElement('div');
+                item.className = 'song-item';
+                if (index === currentIndex) item.style.background = '#222';
+                
+                item.innerHTML = `
+                    <img src="${song.image}" class="song-art" style="width:36px;height:36px">
+                    <div class="song-info">
+                        <div class="song-name" style="font-size:14px">${song.name}</div>
+                        <div class="song-artist" style="font-size:12px">${song.artist}</div>
+                    </div>
+                    <div style="font-size:12px; color:#666">${song.duration}</div>
+                `;
+                
+                item.onclick = () => {
+                    currentIndex = index;
+                    updatePlayerUI(song);
+                    const cacheKey = `${song.artist}|${song.name}`;
+                    const isCached = streamCache.has(cacheKey);
+                    
+                    if (isCached) {
+                        document.getElementById('cache-status').innerHTML = `<span class="cache-hit">⚡ INSTANT</span>`;
+                        startPlayback(song, true);
+                    } else {
+                        document.getElementById('cache-status').innerHTML = `<span style="color:#f59e0b">⏳ Resolving...</span>`;
+                        setTimeout(() => {
+                            streamCache.set(cacheKey, "cached");
+                            document.getElementById('cache-status').innerHTML = `<span class="cache-hit">⚡ CACHED</span>`;
+                            startPlayback(song, false);
+                        }, 2500);
+                    }
+                };
+                
+                container.appendChild(item);
+            });
+        }
+
+        // Initial load
+        window.onload = function() {
+            document.getElementById('search-results').innerHTML = 
+                `<div style="padding:20px; text-align:center; color:#666;">Type in search box and press Enter</div>`;
+            
+            // Auto-trigger a sample search
+            setTimeout(() => {
+                const input = document.getElementById('search-input');
+                input.value = "arijit";
+                performSearch();
+            }, 800);
+            
+            // Show helpful tip
+            console.log('%c[Preview] Try playing the same song twice to see instant playback!', 'color:#22c55e');
+        };
+
+        // Keyboard support
+        document.addEventListener('keydown', function(e) {
+            if (e.key === ' ' && document.getElementById('player-bar').style.display !== 'none') {
+                e.preventDefault();
+                togglePlay();
+            }
+        });
+    </script>
+</body>
+</html>
