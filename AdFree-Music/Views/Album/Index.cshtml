@@ -8,177 +8,240 @@
 @section Styles {
     <style>
         .album-container {
-            padding: 24px 0;
-            animation: fadeIn 0.4s ease;
+            padding: 0 0 60px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        /* === Apple Music Style Header === */
+        .album-hero {
+            position: relative;
+            padding: 60px 40px 50px;
+            background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
+            border-radius: 0 0 40px 40px;
+            margin-bottom: 40px;
+            overflow: hidden;
+        }
+
+        .album-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 30% 20%, rgba(255,45,85,0.08) 0%, transparent 60%);
         }
 
         .album-header {
             display: flex;
-            gap: 40px;
-            margin-bottom: 48px;
+            gap: 48px;
             align-items: flex-end;
+            position: relative;
+            z-index: 2;
         }
 
         .album-header__art {
-            width: 250px;
-            height: 250px;
-            border-radius: var(--radius-lg);
+            width: 280px;
+            height: 280px;
+            border-radius: 18px;
             overflow: hidden;
-            box-shadow: var(--shadow-album);
-            background: var(--bg-tertiary);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5),
+                        0 0 0 1px rgba(255,255,255,0.08);
             flex-shrink: 0;
+            transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .album-header__art:hover {
+            transform: scale(1.02);
         }
 
         .album-header__art img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            display: block;
         }
 
         .album-header__info {
             flex: 1;
-            display: flex;
-            flex-direction: column;
+            min-width: 0;
         }
 
         .album-header__tag {
-            font-size: 0.72rem;
+            display: inline-block;
+            font-size: 0.75rem;
             font-weight: 700;
+            letter-spacing: 3px;
             text-transform: uppercase;
-            color: var(--accent);
-            letter-spacing: 0.08em;
-            margin-bottom: 8px;
-            display: block;
-        }
-
-        .album-header__title {
-            font-size: clamp(2rem, 4.5vw, 3rem);
-            font-weight: 800;
-            letter-spacing: -0.04em;
-            margin-bottom: 8px;
-            line-height: 1.1;
-        }
-
-        .album-header__artist {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: var(--text-primary);
+            color: #ff2d55;
             margin-bottom: 12px;
         }
 
+        .album-header__title {
+            font-size: clamp(2.4rem, 5vw, 3.8rem);
+            font-weight: 800;
+            letter-spacing: -0.05em;
+            line-height: 1.05;
+            margin-bottom: 12px;
+            color: white;
+        }
+
+        .album-header__artist {
+            font-size: 1.35rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 18px;
+        }
+
         .album-header__meta {
-            font-size: 0.88rem;
-            color: var(--text-secondary);
-            margin-bottom: 24px;
             display: flex;
-            gap: 16px;
             flex-wrap: wrap;
+            gap: 18px;
+            color: #a1a1aa;
+            font-size: 0.95rem;
+            margin-bottom: 32px;
         }
 
         .album-header__meta span {
             display: flex;
             align-items: center;
-            gap: 6px;
-        }
-
-        .album-header__meta span:not(:last-child)::after {
-            content: "•";
-            color: var(--text-muted);
-            margin-left: 16px;
+            gap: 8px;
         }
 
         .album-header__actions {
             display: flex;
-            gap: 16px;
+            gap: 14px;
             flex-wrap: wrap;
         }
 
-        /* Detail List layout styling */
+        .btn-apple {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 28px;
+            border-radius: 9999px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-apple-primary {
+            background: #ff2d55;
+            color: white;
+        }
+
+        .btn-apple-primary:hover {
+            background: #ff4466;
+            transform: translateY(-1px);
+        }
+
+        .btn-apple-secondary {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .btn-apple-secondary:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        /* Song List - Apple Music Style */
         .song-list-container {
-            margin-top: 32px;
+            padding: 0 40px;
+        }
+
+        .song-list {
+            background: #1a1a1a;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid #2a2a2a;
+        }
+
+        .song-list-item {
+            transition: background 0.15s ease;
+        }
+
+        .song-list-item:hover {
+            background: #222;
         }
 
         @@media (max-width: 768px) {
+            .album-hero {
+                padding: 40px 20px 30px;
+            }
             .album-header {
                 flex-direction: column;
                 align-items: center;
                 text-align: center;
-                gap: 24px;
+                gap: 32px;
             }
             .album-header__art {
-                width: 200px;
-                height: 200px;
+                width: 220px;
+                height: 220px;
             }
             .album-header__actions {
                 justify-content: center;
-            }
-            .album-header__meta {
-                justify-content: center;
-            }
-            .album-header__meta span:not(:last-child)::after {
-                display: none;
-            }
-            .album-header__meta {
-                gap: 8px 16px;
             }
         }
     </style>
 }
 
 <div class="album-container">
-    <button class="btn-3d-secondary" onclick="window.history.back()" style="margin-bottom: 32px;">
-        ← Back
-    </button>
-
-    <div class="album-header">
-        <div class="album-header__art">
-            <img src="@Model.ImageUrl" alt="@Model.Name" onerror="this.src=artFallback()" />
-        </div>
-        <div class="album-header__info">
-            <span class="album-header__tag">ALBUM</span>
-            <h1 class="album-header__title">@Model.Name</h1>
-            <div class="album-header__artist">@Model.ArtistName</div>
-            
-            <div class="album-header__meta">
-                <span>@Model.Genre</span>
-                @if (!string.IsNullOrEmpty(Model.Year)) {
-                    <span>@Model.Year</span>
-                }
-                <span>@Model.SongCount track@(Model.SongCount != 1 ? "s" : "")</span>
-                <span>@Model.TotalDurationFormatted</span>
+    <!-- Apple Music Style Hero Header -->
+    <div class="album-hero">
+        <div class="album-header">
+            <div class="album-header__art">
+                <img src="@Model.ImageUrl" alt="@Model.Name" onerror="this.src=artFallback()" />
             </div>
+            
+            <div class="album-header__info">
+                <span class="album-header__tag">ALBUM</span>
+                <h1 class="album-header__title">@Model.Name</h1>
+                <div class="album-header__artist">@Model.ArtistName</div>
+                
+                <div class="album-header__meta">
+                    <span>@Model.Genre</span>
+                    @if (!string.IsNullOrEmpty(Model.Year)) {
+                        <span>@Model.Year</span>
+                    }
+                    <span>@Model.SongCount track@(Model.SongCount != 1 ? "s" : "")</span>
+                    <span>@Model.TotalDurationFormatted</span>
+                </div>
 
-            <div class="album-header__actions">
-                <button class="btn-3d" id="btn-album-play">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                        <polygon points="5,3 19,12 5,21" />
-                    </svg>
-                    Play
-                </button>
-                <button class="btn-3d-secondary" id="btn-album-shuffle">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
-                        <polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
-                    </svg>
-                    Shuffle
-                </button>
-                <button class="btn-3d-secondary" id="btn-album-queue">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                    </svg>
-                    Add Queue
-                </button>
-                <button class="btn-3d-secondary" id="btn-album-playlist">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                    </svg>
-                    Add Playlist
-                </button>
+                <div class="album-header__actions">
+                    <button class="btn-apple btn-apple-primary" id="btn-album-play">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <polygon points="5,3 19,12 5,21" />
+                        </svg>
+                        Play
+                    </button>
+                    
+                    <button class="btn-apple btn-apple-secondary" id="btn-album-shuffle">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
+                            <polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+                        </svg>
+                        Shuffle
+                    </button>
+                    
+                    <button class="btn-apple btn-apple-secondary" id="btn-album-queue">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Add to Queue
+                    </button>
+                    
+                    <button class="btn-apple btn-apple-secondary" id="btn-album-playlist">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                        Add to Playlist
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Song List Grid -->
+    <!-- Song List -->
     <div class="song-list-container">
         <div class="song-list">
             <div class="song-list-header">
